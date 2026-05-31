@@ -275,6 +275,36 @@ public class MachineRecipe {
                 "ABA", "BCB", "ABA", 'A', new UnificationEntry(plate, Steel),
                 'B', CustomTags.LV_CIRCUITS, 'C', GTItems.EMITTER_LV.asStack());
 
+        ASSEMBLER_RECIPES.recipeBuilder("hv_solid_fuel_generator")
+                .inputItems(GTMachines.LARGE_BOILER_STEEL)
+                .inputItems(GTMachines.LARGE_STEAM_TURBINE)
+                .inputItems(CustomTags.HV_CIRCUITS, 4)
+                .inputItems(EMITTER_HV)
+                .inputItems(CONVEYOR_MODULE_HV, 4)
+                .inputFluids(SolderingAlloy.getFluid(L * 2))
+                .outputItems(GeneratorMachine.HV_SOLID_FUEL_GENERATOR)
+                .duration(400).EUt(VA[HV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("ev_solid_fuel_generator")
+                .inputItems(GTMachines.LARGE_BOILER_TITANIUM)
+                .inputItems(GTMachines.LARGE_STEAM_TURBINE)
+                .inputItems(CustomTags.EV_CIRCUITS, 4)
+                .inputItems(EMITTER_EV)
+                .inputItems(CONVEYOR_MODULE_EV, 4)
+                .inputFluids(SolderingAlloy.getFluid(L * 4))
+                .outputItems(GeneratorMachine.EV_SOLID_FUEL_GENERATOR)
+                .duration(400).EUt(VA[EV]).save(provider);
+
+        ASSEMBLER_RECIPES.recipeBuilder("iv_solid_fuel_generator")
+                .inputItems(GTMachines.LARGE_BOILER_TUNGSTENSTEEL)
+                .inputItems(GTMachines.LARGE_STEAM_TURBINE)
+                .inputItems(CustomTags.IV_CIRCUITS, 4)
+                .inputItems(EMITTER_IV)
+                .inputItems(CONVEYOR_MODULE_IV, 4)
+                .inputFluids(SolderingAlloy.getFluid(L * 8))
+                .outputItems(GeneratorMachine.IV_SOLID_FUEL_GENERATOR)
+                .duration(400).EUt(VA[IV]).save(provider);
+
         registerMachineRecipe(provider, GTMachines.FLUID_IMPORT_HATCH, " G", " M", 'M', HULL, 'G', GLASS);
         registerMachineRecipe(provider, GTMachines.FLUID_EXPORT_HATCH, " M", " G", 'M', HULL, 'G', GLASS);
 

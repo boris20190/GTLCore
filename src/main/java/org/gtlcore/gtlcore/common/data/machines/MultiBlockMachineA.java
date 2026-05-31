@@ -3298,7 +3298,7 @@ public class MultiBlockMachineA {
     public final static MultiblockMachineDefinition DIMENSIONALLY_TRANSCENDENT_STEAM_BOILER = REGISTRATE.multiblock("dimensionally_transcendent_steam_boiler", holder -> new LargeBoilerMachine(holder, 4096000, 32))
             .rotationState(RotationState.ALL)
             .recipeType(GTRecipeTypes.LARGE_BOILER_RECIPES)
-            .tooltips(Component.translatable("gtceu.multiblock.large_boiler.max_temperature", 4096000 + 274.15, 4096000))
+            .tooltips(Component.translatable("gtceu.multiblock.large_boiler.max_temperature", 4096000 + 273.15, 4096000))
             .tooltips(Component.translatable("gtceu.multiblock.large_boiler.heat_time_tooltip", 4096000 / 32 / 20))
             .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GTNH"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_1.tooltip",

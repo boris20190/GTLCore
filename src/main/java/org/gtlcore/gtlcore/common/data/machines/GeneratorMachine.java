@@ -8,6 +8,7 @@ import org.gtlcore.gtlcore.common.machine.multiblock.generator.ChemicalEnergyDev
 import org.gtlcore.gtlcore.common.machine.multiblock.generator.DysonSphereMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.generator.GeneratorArrayMachine;
 import org.gtlcore.gtlcore.common.machine.multiblock.generator.MegaTurbineMachine;
+import org.gtlcore.gtlcore.common.machine.multiblock.generator.SolidFuelGeneratorMachine;
 import org.gtlcore.gtlcore.utils.MachineIO;
 import org.gtlcore.gtlcore.utils.Registries;
 
@@ -157,6 +158,60 @@ public class GeneratorMachine {
             GTCEu.id("block/casings/mechanic/machine_casing_turbine_tungstensteel"), GTCEu.id("block/multiblock/generator/large_plasma_turbine"));
     public final static MultiblockMachineDefinition SUPERCRITICAL_MEGA_STEAM_TURBINE = registerMegaTurbine("supercritical_mega_steam_turbine", GTValues.LuV, 128, GTLRecipeTypes.SUPERCRITICAL_STEAM_TURBINE_FUELS, GTLBlocks.CASING_SUPERCRITICAL_TURBINE, GTBlocks.CASING_TUNGSTENSTEEL_GEARBOX,
             GTLCore.id("block/supercritical_turbine_casing"), GTCEu.id("block/multiblock/generator/large_plasma_turbine"));
+
+    public static MultiblockMachineDefinition registerSolidFuelGenerator(String name, int tier,
+                                                                         Supplier<? extends Block> casing,
+                                                                         Supplier<? extends Block> firebox,
+                                                                         Supplier<? extends Block> turbineCasing,
+                                                                         Supplier<? extends Block> gearbox,
+                                                                         ResourceLocation baseCasing) {
+        return REGISTRATE.multiblock(name, holder -> new SolidFuelGeneratorMachine(holder, tier))
+                .rotationState(RotationState.ALL)
+                .tier(tier)
+                .recipeType(GTRecipeTypes.DUMMY_RECIPES)
+                .generator(true)
+                .tooltips(Component.translatable("gtceu.machine.solid_fuel_generator.tooltip.0"))
+                .tooltips(Component.translatable("gtceu.machine.solid_fuel_generator.tooltip.1"))
+                .tooltips(Component.translatable("gtceu.machine.solid_fuel_generator.tooltip.2"))
+                .tooltipBuilder(GTLMachines.GTL_ADD)
+                .appearanceBlock(() -> casing.get())
+                .pattern(definition -> FactoryBlockPattern.start()
+                        .aisle("CCCCC", "CGGGC", "CFFFC", "CGGGC", "CCCCC")
+                        .aisle("CCCCC", "GTTTG", "F###F", "GTTTG", "CCCCC")
+                        .aisle("CCCCC", "GTTTG", "F#F#F", "GTTTG", "CCCCC")
+                        .aisle("CCCCC", "GTTTG", "F###F", "GTTTG", "CCCCC")
+                        .aisle("CCCCC", "CGGGC", "CFSFC", "CGGGC", "CCCCC")
+                        .where("S", Predicates.controller(Predicates.blocks(definition.get())))
+                        .where("C", Predicates.blocks(casing.get())
+                                .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setExactLimit(1))
+                                .or(Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1))
+                                .or(Predicates.abilities(PartAbility.MUFFLER).setExactLimit(1)))
+                        .where("F", Predicates.blocks(firebox.get()))
+                        .where("T", Predicates.blocks(turbineCasing.get()))
+                        .where("G", Predicates.blocks(gearbox.get()))
+                        .where("#", Predicates.air())
+                        .build())
+                .workableCasingRenderer(baseCasing, GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+                .register();
+    }
+
+    public final static MultiblockMachineDefinition HV_SOLID_FUEL_GENERATOR = registerSolidFuelGenerator(
+            "hv_solid_fuel_generator", GTValues.HV,
+            GTBlocks.CASING_STEEL_TURBINE, GTBlocks.FIREBOX_STEEL,
+            GTBlocks.CASING_STEEL_TURBINE, GTBlocks.CASING_STEEL_GEARBOX,
+            GTCEu.id("block/casings/mechanic/machine_casing_turbine_steel"));
+
+    public final static MultiblockMachineDefinition EV_SOLID_FUEL_GENERATOR = registerSolidFuelGenerator(
+            "ev_solid_fuel_generator", GTValues.EV,
+            GTBlocks.CASING_TITANIUM_TURBINE, GTBlocks.FIREBOX_TITANIUM,
+            GTBlocks.CASING_TITANIUM_TURBINE, GTBlocks.CASING_TITANIUM_GEARBOX,
+            GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"));
+
+    public final static MultiblockMachineDefinition IV_SOLID_FUEL_GENERATOR = registerSolidFuelGenerator(
+            "iv_solid_fuel_generator", GTValues.IV,
+            GTBlocks.CASING_TUNGSTENSTEEL_TURBINE, GTBlocks.FIREBOX_TUNGSTENSTEEL,
+            GTBlocks.CASING_TUNGSTENSTEEL_TURBINE, GTBlocks.CASING_TUNGSTENSTEEL_GEARBOX,
+            GTCEu.id("block/casings/mechanic/machine_casing_turbine_tungstensteel"));
 
     public final static MultiblockMachineDefinition DYSON_SPHERE = REGISTRATE.multiblock("dyson_sphere", DysonSphereMachine::new)
             .rotationState(RotationState.NON_Y_AXIS)
