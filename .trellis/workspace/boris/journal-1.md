@@ -186,3 +186,36 @@ Switched local work to the gtl-1431-skyblock upstream baseline, migrated Trellis
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Solid fuel generator structure rendering
+
+**Date**: 2026-05-31
+**Task**: Solid fuel generator structure rendering
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Resized the solid fuel generator to the boiler-sized 3x3x4 structure, synced burn progress to RecipeLogic for Jade, simplified runtime display text, and reused the large boiler renderer so firebox replacement hatches render as fireboxes.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cc8ea961` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
