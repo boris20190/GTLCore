@@ -731,7 +731,7 @@
   "gtceu.machine.generator_array.wireless": "无线电网模式：",
   "gtceu.machine.solid_fuel_generator.tooltip.0": "消耗大型锅炉可用的物品燃料，直接向绑定的无线电网输出EU。",
   "gtceu.machine.solid_fuel_generator.tooltip.1": "虚拟水和蒸汽在内部循环，不接受流体输入，也不输出灰烬。",
-  "gtceu.machine.solid_fuel_generator.tooltip.2": "发电速率读取对应大型锅炉最大温度配置，总EU保持与大型锅炉-基础蒸汽轮机链路一致。",
+  "gtceu.machine.solid_fuel_generator.tooltip.2": "发电速率以对应大型锅炉最大温度配置为基准，按4倍速率释放；总EU保持与大型锅炉-基础蒸汽轮机链路一致。",
   "gtceu.machine.solid_fuel_generator.no_owner": "未绑定无线电网所有者。",
   "gtceu.machine.solid_fuel_generator.wireless_failed": "无线电网入账失败。",
   "gtceu.machine.solid_fuel_generator.max_temperature": "运行温度：%s K",

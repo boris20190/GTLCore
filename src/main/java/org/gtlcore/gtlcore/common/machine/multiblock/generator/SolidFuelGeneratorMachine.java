@@ -51,6 +51,7 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
     private static final long EU_PER_STEAM_MB = 1;
     private static final long STEAM_MB_PER_EU = 2;
     private static final long LARGE_BOILER_DURATION_REFERENCE = 6400;
+    private static final long ENERGY_RELEASE_MULTIPLIER = 4;
     private static final double KELVIN_OFFSET = 273.15;
     private static final int ENERGY_MODEL_VERSION = 1;
     private static final long EU_PER_LARGE_BOILER_BASE_TICK = LARGE_BOILER_DURATION_REFERENCE * EU_PER_STEAM_MB /
@@ -275,7 +276,8 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
     }
 
     protected long getTargetEUt() {
-        return Math.max(1, (long) getBoilerMaxTemperature() * EU_PER_STEAM_MB / STEAM_MB_PER_EU);
+        return Math.max(1, (long) getBoilerMaxTemperature() * EU_PER_STEAM_MB * ENERGY_RELEASE_MULTIPLIER /
+                STEAM_MB_PER_EU);
     }
 
     protected int getBoilerMaxTemperature() {

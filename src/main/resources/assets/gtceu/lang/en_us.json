@@ -731,7 +731,7 @@
   "gtceu.machine.generator_array.wireless": "Wireless Power Grid Mode:",
   "gtceu.machine.solid_fuel_generator.tooltip.0": "Consumes item fuels accepted by large boilers and outputs EU directly to the bound wireless grid.",
   "gtceu.machine.solid_fuel_generator.tooltip.1": "Virtual water and steam circulate internally; it accepts no fluid input and produces no ash.",
-  "gtceu.machine.solid_fuel_generator.tooltip.2": "EU/t follows the matching large boiler max-temperature config while total EU matches the large boiler-basic steam turbine chain.",
+  "gtceu.machine.solid_fuel_generator.tooltip.2": "EU/t is based on the matching large boiler max-temperature config and released at 4x speed, while total EU matches the large boiler-basic steam turbine chain.",
   "gtceu.machine.solid_fuel_generator.no_owner": "No wireless grid owner is bound.",
   "gtceu.machine.solid_fuel_generator.wireless_failed": "Wireless grid credit failed.",
   "gtceu.machine.solid_fuel_generator.max_temperature": "Operating temperature: %s K",

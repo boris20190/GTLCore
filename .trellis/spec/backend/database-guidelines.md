@@ -106,10 +106,10 @@ steamBoilerDuration = furnaceBurnTime * 12
 
 ```text
 totalEU = largeBoilerDuration * 6400 / 2
-targetEUt = matchingLargeBoilerMaxTemperature / 2
+targetEUt = matchingLargeBoilerMaxTemperature / 2 * 4
 ```
 
-这里 `/ 2` 来自基础蒸汽轮机配方 `640 mB Steam / 10t -> 32 EU/t`，即 `0.5 EU/mB`。实现层应保留 `remainingEU`，每 tick 输出 `min(targetEUt, remainingEU)`，让最后一个 tick 入账剩余 EU，避免钢锅炉这类非整数倍率造成热值损失。
+这里 `/ 2` 来自基础蒸汽轮机配方 `640 mB Steam / 10t -> 32 EU/t`，即 `0.5 EU/mB`；额外 `* 4` 是固体燃料发电机的固定能量释放倍率，只提高 EU/t 和燃料消耗速率，不提高单个燃料的总 EU。实现层应保留 `remainingEU`，每 tick 输出 `min(targetEUt, remainingEU)`，让最后一个 tick 入账剩余 EU，避免钢锅炉这类非整数倍率造成热值损失。
 
 如果变更了持久化能量模型，要给机器状态加持久化模型版本，并在旧版本加载时清掉当前燃烧中的旧 `remainingEU`/`operationTotalEU`，防止旧存档继续按过期模型释放已经持久化的超大能量包。机器 `onLoad()` 可能发生在 chunk post-load 过程中；迁移时不要在 `onLoad()` 内直接调用 `markDirty()`，否则可能触发 `Level.blockEntityChanged -> getChunk` 等待当前 chunk 任务，导致旧存档卡在准备区域。需要持久化迁移结果时，参考 `ComputationProviderMachine` 的做法用 `ServerLevel.getServer().tell(new TickTask(...))` 延迟到当前加载任务结束后再标记脏数据。
 
