@@ -25,6 +25,8 @@ import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern;
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper;
+import com.gregtechceu.gtceu.client.renderer.machine.LargeBoilerRenderer;
+import com.gregtechceu.gtceu.common.block.BoilerFireboxType;
 import com.gregtechceu.gtceu.common.data.*;
 import com.gregtechceu.gtceu.utils.FormattingUtil;
 
@@ -164,6 +166,7 @@ public class GeneratorMachine {
                                                                          Supplier<? extends Block> firebox,
                                                                          Supplier<? extends Block> turbineCasing,
                                                                          Supplier<? extends Block> gearbox,
+                                                                         BoilerFireboxType fireboxType,
                                                                          ResourceLocation baseCasing) {
         return REGISTRATE.multiblock(name, holder -> new SolidFuelGeneratorMachine(holder, tier))
                 .rotationState(RotationState.ALL)
@@ -175,23 +178,22 @@ public class GeneratorMachine {
                 .tooltips(Component.translatable("gtceu.machine.solid_fuel_generator.tooltip.2"))
                 .tooltipBuilder(GTLMachines.GTL_ADD)
                 .appearanceBlock(() -> casing.get())
+                .partAppearance((controller, part, side) -> controller.self().getPos().below().getY() == part.self().getPos().getY() ?
+                        firebox.get().defaultBlockState() : casing.get().defaultBlockState())
                 .pattern(definition -> FactoryBlockPattern.start()
-                        .aisle("CCCCC", "CGGGC", "CFFFC", "CGGGC", "CCCCC")
-                        .aisle("CCCCC", "GTTTG", "F###F", "GTTTG", "CCCCC")
-                        .aisle("CCCCC", "GTTTG", "F#F#F", "GTTTG", "CCCCC")
-                        .aisle("CCCCC", "GTTTG", "F###F", "GTTTG", "CCCCC")
-                        .aisle("CCCCC", "CGGGC", "CFSFC", "CGGGC", "CCCCC")
+                        .aisle("FFF", "TTT", "TTT", "TTT")
+                        .aisle("FFF", "TGT", "TGT", "TTT")
+                        .aisle("FFF", "TST", "TTT", "TTT")
                         .where("S", Predicates.controller(Predicates.blocks(definition.get())))
-                        .where("C", Predicates.blocks(casing.get())
+                        .where("F", Predicates.blocks(firebox.get()).setMinGlobalLimited(3)
                                 .or(Predicates.abilities(PartAbility.IMPORT_ITEMS).setExactLimit(1))
                                 .or(Predicates.abilities(PartAbility.MAINTENANCE).setExactLimit(1))
                                 .or(Predicates.abilities(PartAbility.MUFFLER).setExactLimit(1)))
-                        .where("F", Predicates.blocks(firebox.get()))
                         .where("T", Predicates.blocks(turbineCasing.get()))
                         .where("G", Predicates.blocks(gearbox.get()))
-                        .where("#", Predicates.air())
                         .build())
-                .workableCasingRenderer(baseCasing, GTCEu.id("block/multiblock/generator/large_steam_turbine"))
+                .renderer(() -> new LargeBoilerRenderer(baseCasing, fireboxType,
+                        GTCEu.id("block/multiblock/generator/large_steam_turbine")))
                 .register();
     }
 
@@ -199,18 +201,21 @@ public class GeneratorMachine {
             "hv_solid_fuel_generator", GTValues.HV,
             GTBlocks.CASING_STEEL_TURBINE, GTBlocks.FIREBOX_STEEL,
             GTBlocks.CASING_STEEL_TURBINE, GTBlocks.CASING_STEEL_GEARBOX,
+            BoilerFireboxType.STEEL_FIREBOX,
             GTCEu.id("block/casings/mechanic/machine_casing_turbine_steel"));
 
     public final static MultiblockMachineDefinition EV_SOLID_FUEL_GENERATOR = registerSolidFuelGenerator(
             "ev_solid_fuel_generator", GTValues.EV,
             GTBlocks.CASING_TITANIUM_TURBINE, GTBlocks.FIREBOX_TITANIUM,
             GTBlocks.CASING_TITANIUM_TURBINE, GTBlocks.CASING_TITANIUM_GEARBOX,
+            BoilerFireboxType.TITANIUM_FIREBOX,
             GTCEu.id("block/casings/mechanic/machine_casing_turbine_titanium"));
 
     public final static MultiblockMachineDefinition IV_SOLID_FUEL_GENERATOR = registerSolidFuelGenerator(
             "iv_solid_fuel_generator", GTValues.IV,
             GTBlocks.CASING_TUNGSTENSTEEL_TURBINE, GTBlocks.FIREBOX_TUNGSTENSTEEL,
             GTBlocks.CASING_TUNGSTENSTEEL_TURBINE, GTBlocks.CASING_TUNGSTENSTEEL_GEARBOX,
+            BoilerFireboxType.TUNGSTENSTEEL_FIREBOX,
             GTCEu.id("block/casings/mechanic/machine_casing_turbine_tungstensteel"));
 
     public final static MultiblockMachineDefinition DYSON_SPHERE = REGISTRATE.multiblock("dyson_sphere", DysonSphereMachine::new)

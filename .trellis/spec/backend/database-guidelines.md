@@ -113,6 +113,19 @@ targetEUt = matchingLargeBoilerMaxTemperature / 2
 
 如果变更了持久化能量模型，要给机器状态加持久化模型版本，并在旧版本加载时清掉当前燃烧中的旧 `remainingEU`/`operationTotalEU`，防止旧存档继续按过期模型释放已经持久化的超大能量包。机器 `onLoad()` 可能发生在 chunk post-load 过程中；迁移时不要在 `onLoad()` 内直接调用 `markDirty()`，否则可能触发 `Level.blockEntityChanged -> getChunk` 等待当前 chunk 任务，导致旧存档卡在准备区域。需要持久化迁移结果时，参考 `ComputationProviderMachine` 的做法用 `ServerLevel.getServer().tell(new TickTask(...))` 延迟到当前加载任务结束后再标记脏数据。
 
+Jade/探针进度条应复用 GTCEu `RecipeLogic` 的 `progress/duration/isActive` 数据，而不是新增一套独立 provider。对固体燃料发电机这类不运行真实 GT recipe 的机器，可把 `remainingEU / operationTotalEU` 按当前 `targetEUt` 换算成剩余 tick 和总 tick，同步到 `RecipeLogic`，让核心方块显示和大型锅炉一致的燃烧进度条。
+
+### Solid fuel generator multiblock structure
+
+HV/EV/IV 固体燃料发电机是“大型锅炉 + 基础蒸汽轮机”的黑盒等效机器，结构应保持普通大型锅炉尺寸和可替换位规则：
+
+- pattern 使用 3 个 aisle、每个 aisle 4 行、每行 3 字符，即 3x3x4。
+- 最下层使用对应阶段火箱，并只允许火箱位置被输入总线、维护仓、消声仓等能力方块替换。
+- 涡轮外壳使用对应阶段涡轮外壳，不允许能力方块替换。
+- 大型锅炉内部管道位置使用对应阶段齿轮箱替代。
+- 替换最下层火箱的能力方块成型后必须渲染为火箱外观。这里需要同时处理 `partAppearance` 和成形部件模型 renderer；大型锅炉依靠 `LargeBoilerRenderer.renderPartModel` 在火箱层为输入仓等部件烘焙火箱贴图，单独修改 `partAppearance` 不足以改变成形后的部件外观。
+- 不把该机器重新设计为可放入发电阵列的单方块机器，除非重新评估平衡性。
+
 ### Boiler temperature display
 
 GTCEu 大型锅炉的内部 `maxTemperature` 参与配方时长和蒸汽速率计算，不等同于玩家 UI 里显示的 K 值。玩家可见 K 显示应使用严格物理换算：

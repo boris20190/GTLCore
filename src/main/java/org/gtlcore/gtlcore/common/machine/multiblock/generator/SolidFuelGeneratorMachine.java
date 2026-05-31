@@ -1,6 +1,7 @@
 package org.gtlcore.gtlcore.common.machine.multiblock.generator;
 
 import org.gtlcore.gtlcore.api.machine.multiblock.NoEnergyMultiblockMachine;
+import org.gtlcore.gtlcore.mixin.gtm.api.recipe.RecipeLogicAccessor;
 import org.gtlcore.gtlcore.utils.MachineIO;
 
 import com.gregtechceu.gtceu.api.GTValues;
@@ -117,6 +118,7 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         operationTotalEU = 0;
         targetEUt = 0;
         lastEUt = 0;
+        resetRecipeLogicProgress();
         energyModelVersion = ENERGY_MODEL_VERSION;
         return true;
     }
@@ -142,11 +144,13 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         }
         if (!isWorkingEnabled()) {
             lastEUt = 0;
+            resetRecipeLogicProgress();
             recipeLogic.setStatus(RecipeLogic.Status.IDLE);
             return;
         }
         if (userid == null) {
             lastEUt = 0;
+            resetRecipeLogicProgress();
             recipeLogic.setWaiting(Component.translatable("gtceu.machine.solid_fuel_generator.no_owner"));
             return;
         }
@@ -154,6 +158,7 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
             lastEUt = 0;
             operationTotalEU = 0;
             targetEUt = getTargetEUt();
+            resetRecipeLogicProgress();
             recipeLogic.setStatus(RecipeLogic.Status.IDLE);
             return;
         }
@@ -162,19 +167,25 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         long euToCredit = Math.min(targetEUt, remainingEU);
         if (euToCredit <= 0) {
             lastEUt = 0;
+            resetRecipeLogicProgress();
             recipeLogic.setStatus(RecipeLogic.Status.IDLE);
             return;
         }
         if (WirelessEnergyManager.addEUToGlobalEnergyMap(userid, euToCredit, this)) {
             remainingEU -= euToCredit;
             lastEUt = euToCredit;
-            recipeLogic.setStatus(RecipeLogic.Status.WORKING);
             if (remainingEU <= 0) {
                 remainingEU = 0;
                 operationTotalEU = 0;
+                resetRecipeLogicProgress();
+                recipeLogic.setStatus(RecipeLogic.Status.IDLE);
+            } else {
+                updateRecipeLogicProgress();
+                recipeLogic.setStatus(RecipeLogic.Status.WORKING);
             }
         } else {
             lastEUt = 0;
+            updateRecipeLogicProgress();
             recipeLogic.setWaiting(Component.translatable("gtceu.machine.solid_fuel_generator.wireless_failed"));
         }
     }
@@ -188,6 +199,35 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         remainingEU = Math.max(1, (long) operation.largeBoilerDuration() * EU_PER_LARGE_BOILER_BASE_TICK);
         operationTotalEU = remainingEU;
         return true;
+    }
+
+    protected void updateRecipeLogicProgress() {
+        if (operationTotalEU <= 0 || remainingEU <= 0 || targetEUt <= 0) {
+            resetRecipeLogicProgress();
+            return;
+        }
+        int maxProgress = getOperationTicks(operationTotalEU, targetEUt);
+        int remainingProgress = getOperationTicks(remainingEU, targetEUt);
+        recipeLogic.setProgress(Math.max(0, Math.min(maxProgress, maxProgress - remainingProgress)));
+        ((RecipeLogicAccessor) recipeLogic).setDuration(maxProgress);
+        ((RecipeLogicAccessor) recipeLogic).setIsActive(true);
+    }
+
+    protected void resetRecipeLogicProgress() {
+        recipeLogic.setProgress(0);
+        ((RecipeLogicAccessor) recipeLogic).setDuration(0);
+        ((RecipeLogicAccessor) recipeLogic).setIsActive(false);
+    }
+
+    protected int getOperationTicks(long eu, long euPerTick) {
+        if (eu <= 0 || euPerTick <= 0) {
+            return 0;
+        }
+        long ticks = eu / euPerTick;
+        if (eu % euPerTick != 0) {
+            ticks++;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, ticks));
     }
 
     @Nullable
@@ -277,8 +317,6 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         if (userid != null) {
             textList.add(Component.translatable("gtmthings.machine.wireless_energy_monitor.tooltip.0",
                     TeamUtil.GetName(getLevel(), userid)));
-            textList.add(Component.translatable("gtmthings.machine.wireless_energy_monitor.tooltip.1",
-                    FormattingUtil.formatNumbers(WirelessEnergyManager.getUserEU(userid))));
         } else {
             textList.add(Component.translatable("gtceu.machine.solid_fuel_generator.no_owner"));
         }
@@ -290,10 +328,6 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
                 FormattingUtil.formatNumbers(getDisplayedBoilerMaxTemperature())));
         textList.add(Component.translatable("gtceu.recipe.eu_inverted",
                 FormattingUtil.formatNumbers(targetEUt > 0 ? targetEUt : getTargetEUt())));
-        if (lastEUt > 0) {
-            textList.add(Component.translatable("gtceu.machine.solid_fuel_generator.last_eut",
-                    FormattingUtil.formatNumbers(lastEUt)));
-        }
         if (remainingEU > 0) {
             textList.add(Component.translatable("gtceu.machine.solid_fuel_generator.remaining_eu",
                     FormattingUtil.formatNumbers(remainingEU)));
