@@ -219,3 +219,36 @@ Resized the solid fuel generator to the boiler-sized 3x3x4 structure, synced bur
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Solid fuel generator display text
+
+**Date**: 2026-05-31
+**Task**: Solid fuel generator display text
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Simplified the solid fuel generator display by removing the running and owner lines, renaming max temperature to operating temperature, renaming remaining creditable energy to remaining energy, and building a jar for pack testing.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `499ed2ce` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

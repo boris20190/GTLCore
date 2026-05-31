@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 7
 - **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~221 | Active |
+| `journal-1.md` | ~254 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-05-31 | Solid fuel generator display text | `499ed2ce` | `gtl-1431-skyblock` |
 | 6 | 2026-05-31 | Solid fuel generator structure rendering | `cc8ea961` | `gtl-1431-skyblock` |
 | 5 | 2026-05-31 | Migrate GTLCore to skyblock baseline | `a2768ff2` | `gtl-1431-skyblock` |
 | 4 | 2026-05-31 | Solid fuel generator boiler parity | `eff91f3d`, `d46a8989`, `dab084fa` | `gtl-1431` |
