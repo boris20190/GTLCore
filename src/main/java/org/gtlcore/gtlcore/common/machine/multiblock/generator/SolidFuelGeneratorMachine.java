@@ -36,7 +36,6 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.phys.BlockHitResult;
 
 import com.hepdd.gtmthings.api.misc.WirelessEnergyManager;
-import com.hepdd.gtmthings.utils.TeamUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -309,15 +308,11 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         if (!isWorkingEnabled()) {
             textList.add(Component.translatable("gtceu.multiblock.work_paused"));
         } else if (remainingEU > 0) {
-            textList.add(Component.translatable("gtceu.multiblock.running"));
             textList.add(Component.translatable("gtceu.multiblock.progress", getProgressPercent()));
         } else {
             textList.add(Component.translatable("gtceu.multiblock.idling"));
         }
-        if (userid != null) {
-            textList.add(Component.translatable("gtmthings.machine.wireless_energy_monitor.tooltip.0",
-                    TeamUtil.GetName(getLevel(), userid)));
-        } else {
+        if (userid == null) {
             textList.add(Component.translatable("gtceu.machine.solid_fuel_generator.no_owner"));
         }
         if (recipeLogic.isWaiting() && remainingEU > 0 && userid != null) {
