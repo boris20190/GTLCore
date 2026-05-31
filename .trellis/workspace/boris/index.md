@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
-- **Last Active**: 2026-05-31
+- **Total Sessions**: 9
+- **Last Active**: 2026-06-01
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~287 | Active |
+| `journal-1.md` | ~323 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-06-01 | Solid fuel generator lifecycle fixes | `c14c3a63` | `gtl-1431-skyblock` |
 | 8 | 2026-05-31 | Solid fuel generator energy release multiplier | `126aa299` | `gtl-1431-skyblock` |
 | 7 | 2026-05-31 | Solid fuel generator display text | `499ed2ce` | `gtl-1431-skyblock` |
 | 6 | 2026-05-31 | Solid fuel generator structure rendering | `cc8ea961` | `gtl-1431-skyblock` |

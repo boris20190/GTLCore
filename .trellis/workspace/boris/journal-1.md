@@ -288,3 +288,36 @@ Increased solid fuel generator energy release rate to 4x while preserving per-fu
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: Solid fuel generator lifecycle fixes
+
+**Date**: 2026-06-01
+**Task**: Solid fuel generator lifecycle fixes
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Fixed solid fuel generator pause handling, structure invalidation, controller-destroy cleanup, and documented the manual RecipeLogic lifecycle pattern.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c14c3a63` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
