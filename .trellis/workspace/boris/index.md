@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
+- **Total Sessions**: 5
 - **Last Active**: 2026-05-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~150 | Active |
+| `journal-1.md` | ~183 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-05-31 | Migrate GTLCore to skyblock baseline | `a2768ff2` | `gtl-1431-skyblock` |
 | 4 | 2026-05-31 | Solid fuel generator boiler parity | `eff91f3d`, `d46a8989`, `dab084fa` | `gtl-1431` |
 | 3 | 2026-05-31 | Solid fuel generator multiblock | `bbd2ffef` | `gtl-1431` |
 | 2 | 2026-05-31 | Run Project Setup | `97247de8` | `gtl-1431` |

@@ -94,7 +94,10 @@ Implemented HV/EV/IV wireless-only solid fuel generator multiblocks using solid 
 
 ### Main Changes
 
-(Add details)
+- Switched the local working branch to `gtl-1431-skyblock` based on `origin/gtl-1431-skyblock`.
+- Migrated the existing Trellis setup and solid fuel generator implementation onto the skyblock upstream baseline.
+- Built `gtlcore-1.2.2.9-fix4.jar` and installed it into the PrismLauncher modpack instance.
+- Removed the obsolete local `gtl-1431` branch after successful migration.
 
 ### Git Commits
 
@@ -104,7 +107,9 @@ Implemented HV/EV/IV wireless-only solid fuel generator multiblocks using solid 
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] `./gradlew spotlessCheck compileJava -Dorg.gradle.java.home=/usr/lib/jvm/java-21-openjdk`
+- [OK] `./gradlew build -Dorg.gradle.java.home=/usr/lib/jvm/java-21-openjdk`
+- [OK] User verified the PrismLauncher modpack loads successfully with `gtlcore-1.2.2.9-fix4.jar`.
 
 ### Status
 
@@ -136,6 +141,39 @@ Aligned the solid fuel generator with GTCEu large boiler item-fuel semantics and
 | `eff91f3d` | (see git log) |
 | `d46a8989` | (see git log) |
 | `dab084fa` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 5: Migrate GTLCore to skyblock baseline
+
+**Date**: 2026-05-31
+**Task**: Migrate GTLCore to skyblock baseline
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Switched local work to the gtl-1431-skyblock upstream baseline, migrated Trellis and solid fuel generator changes, built gtlcore-1.2.2.9-fix4.jar, installed it into the Prism modpack, and verified the modpack loads successfully.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a2768ff2` | (see git log) |
 
 ### Testing
 
