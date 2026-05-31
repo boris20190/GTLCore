@@ -39,7 +39,7 @@ public abstract class MultiblockStateMixin implements IMultiblockStateGet {
     public void onBlockStateChanged(BlockPos pos, BlockState state) {
         if (this.world instanceof ServerLevel serverLevel) {
             if (pos.equals(this.controllerPos)) {
-                if (this.lastController != null && !state.is(this.lastController.self().getBlockState().getBlock())) {
+                if (this.lastController != null && !state.is(this.lastController.self().getDefinition().getBlock())) {
                     this.lastController.onStructureInvalid();
                     MultiblockWorldSavedData mwsd = MultiblockWorldSavedData.getOrCreate(serverLevel);
                     mwsd.removeMapping((MultiblockState) (Object) this);

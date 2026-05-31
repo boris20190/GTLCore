@@ -80,11 +80,15 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
     private long lastEUt;
     @Persisted
     private int energyModelVersion;
+    @Persisted
+    @DescSynced
+    private boolean workingAllowed = true;
 
     public SolidFuelGeneratorMachine(IMachineBlockEntity holder, int tier, Object... args) {
         super(holder, args);
         this.tier = tier;
-        this.generationSubs = new ConditionalSubscriptionHandler(this, this::generationServerTick, this::isFormed);
+        this.generationSubs = new ConditionalSubscriptionHandler(this, this::generationServerTick,
+                this::shouldGenerate);
     }
 
     @Override
@@ -107,7 +111,22 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
     @Override
     public void onStructureFormed() {
         super.onStructureFormed();
+        syncRecipeLogicState();
         generationSubs.initialize(getLevel());
+    }
+
+    @Override
+    public void onStructureInvalid() {
+        boolean controllerSurvives = isControllerBlockPresent();
+        super.onStructureInvalid();
+        generationSubs.unsubscribe();
+        lastEUt = 0;
+        if (!controllerSurvives) {
+            clearFuelOperation();
+        }
+        if (!isRemote()) {
+            markDirty();
+        }
     }
 
     protected boolean migrateEnergyModel() {
@@ -121,6 +140,22 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         resetRecipeLogicProgress();
         energyModelVersion = ENERGY_MODEL_VERSION;
         return true;
+    }
+
+    @Override
+    public boolean isWorkingEnabled() {
+        return workingAllowed;
+    }
+
+    @Override
+    public void setWorkingEnabled(boolean workingEnabled) {
+        workingAllowed = workingEnabled;
+        super.setWorkingEnabled(workingEnabled);
+        if (isFormed()) {
+            syncRecipeLogicState();
+        }
+        updateGenerationSubscription();
+        markDirty();
     }
 
     @Override
@@ -142,10 +177,9 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
         if (isRemote() || !isFormed()) {
             return;
         }
-        if (!isWorkingEnabled()) {
-            lastEUt = 0;
-            resetRecipeLogicProgress();
-            recipeLogic.setStatus(RecipeLogic.Status.IDLE);
+        if (!workingAllowed) {
+            pauseGenerationDisplay();
+            updateGenerationSubscription();
             return;
         }
         if (userid == null) {
@@ -188,6 +222,60 @@ public class SolidFuelGeneratorMachine extends NoEnergyMultiblockMachine impleme
             updateRecipeLogicProgress();
             recipeLogic.setWaiting(Component.translatable("gtceu.machine.solid_fuel_generator.wireless_failed"));
         }
+    }
+
+    protected boolean shouldGenerate() {
+        return isFormed() && workingAllowed;
+    }
+
+    protected boolean isControllerBlockPresent() {
+        var level = getLevel();
+        return level != null && level.getBlockState(getPos()).is(getDefinition().getBlock());
+    }
+
+    protected void updateGenerationSubscription() {
+        if (!isRemote()) {
+            generationSubs.updateSubscription();
+        }
+    }
+
+    protected void syncRecipeLogicState() {
+        if (!workingAllowed) {
+            pauseGenerationDisplay();
+            return;
+        }
+        if (remainingEU > 0) {
+            targetEUt = getTargetEUt();
+            updateRecipeLogicProgress();
+            recipeLogic.setStatus(RecipeLogic.Status.WORKING);
+        } else {
+            lastEUt = 0;
+            operationTotalEU = 0;
+            targetEUt = getTargetEUt();
+            resetRecipeLogicProgress();
+            recipeLogic.setStatus(RecipeLogic.Status.IDLE);
+        }
+    }
+
+    protected void pauseGenerationDisplay() {
+        lastEUt = 0;
+        if (remainingEU > 0) {
+            if (targetEUt <= 0) {
+                targetEUt = getTargetEUt();
+            }
+            updateRecipeLogicProgress();
+        } else {
+            resetRecipeLogicProgress();
+        }
+        recipeLogic.setStatus(RecipeLogic.Status.SUSPEND);
+    }
+
+    protected void clearFuelOperation() {
+        remainingEU = 0;
+        operationTotalEU = 0;
+        targetEUt = 0;
+        lastEUt = 0;
+        resetRecipeLogicProgress();
     }
 
     protected boolean startNextFuelOperation() {

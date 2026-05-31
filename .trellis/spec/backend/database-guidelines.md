@@ -115,6 +115,25 @@ targetEUt = matchingLargeBoilerMaxTemperature / 2 * 4
 
 Jade/探针进度条应复用 GTCEu `RecipeLogic` 的 `progress/duration/isActive` 数据，而不是新增一套独立 provider。对固体燃料发电机这类不运行真实 GT recipe 的机器，可把 `remainingEU / operationTotalEU` 按当前 `targetEUt` 换算成剩余 tick 和总 tick，同步到 `RecipeLogic`，让核心方块显示和大型锅炉一致的燃烧进度条。
 
+### Manual RecipeLogic lifecycle for custom generators
+
+对“无真实 GT recipe、但需要显示工作态/进度/ActiveBlock 外观”的自定义多方块发电机，应把燃料周期、用户开关和 `RecipeLogic` 展示状态分开管理：
+
+- 用户暂停意图使用机器自己的 `@Persisted @DescSynced boolean workingAllowed = true` 保存；不要把 `RecipeLogic.Status` 当作唯一真源，因为 `WorkableMultiblockMachine.onStructureInvalid()` 会重置 `RecipeLogic`。
+- `isWorkingEnabled()` 返回 `workingAllowed`；`setWorkingEnabled(boolean)` 先更新该字段，再调用父类路径触发 part `onPaused(...)`、`RecipeLogic.Status.SUSPEND/IDLE` 和 active block 更新。
+- 暂停时设置 `RecipeLogic.Status.SUSPEND`，不要设置 `IDLE`。GTCEu `RecipeLogic.isWorkingEnabled()` 对 `SUSPEND` 返回 false，对 `IDLE` 返回 true；把暂停分支写成 `IDLE` 会导致下一 tick 自动恢复工作。
+- 自定义 tick 订阅条件应包含 `isFormed() && workingAllowed`，并在 `onStructureFormed()`、`onStructureInvalid()`、`setWorkingEnabled(...)` 后更新或取消订阅。
+- 结构失效时先走 `super.onStructureInvalid()`，复用 GTCEu 的 `updateActiveBlocks(false)`、part 关系和能力代理清理；控制器仍存在时保留 `remainingEU/operationTotalEU`，重新成型后按剩余能量同步进度；控制器被破坏时清空当前燃料周期。
+- 修改持久化运行状态后要 `markDirty()`，避免结构失效后保存到旧的显示/进度状态。
+
+全局多方块控制器销毁判定应比较新方块状态和控制器定义方块：
+
+```java
+state.is(lastController.self().getDefinition().getBlock())
+```
+
+不要使用 `lastController.self().getBlockState().getBlock()` 作为期望值；控制器位置已经变成空气时，该读取会拿到破坏后的世界状态，可能跳过 `onStructureInvalid()`，导致火箱等 active block 残留燃烧外观。
+
 ### Solid fuel generator multiblock structure
 
 HV/EV/IV 固体燃料发电机是“大型锅炉 + 基础蒸汽轮机”的黑盒等效机器，结构应保持普通大型锅炉尺寸和可替换位规则：
