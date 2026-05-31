@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "记录无真实 GT recipe 的自定义多方块发电机在暂停、结构失效和控制器销毁时应如何同步 RecipeLogic、订阅和持久化状态。"}

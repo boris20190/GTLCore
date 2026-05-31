@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "确认本次修改归属 backend 层，需遵守机器生命周期、持久化和验证约束。"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "复核机器持久化、固体燃料发电机能量模型、RecipeLogic 进度复用和本次新增生命周期规范。"}
