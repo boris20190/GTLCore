@@ -252,3 +252,39 @@ Simplified the solid fuel generator display by removing the running and owner li
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Solid fuel generator energy release multiplier
+
+**Date**: 2026-05-31
+**Task**: Solid fuel generator energy release multiplier
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Increased solid fuel generator energy release rate to 4x while preserving per-fuel total EU, updated tooltips and backend spec, and verified with spotlessCheck, compileJava, and build.
+
+### Main Changes
+
+- Added a fixed 4x energy release multiplier to solid fuel generators.
+- Preserved per-fuel total EU by leaving remaining energy calculation unchanged.
+- Updated solid fuel generator tooltip text and backend spec formula.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `126aa299` | (see git log) |
+
+### Testing
+
+- [OK] `./gradlew spotlessCheck compileJava -Dorg.gradle.java.home=/usr/lib/jvm/java-21-openjdk`
+- [OK] `./gradlew build -Dorg.gradle.java.home=/usr/lib/jvm/java-21-openjdk`
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
