@@ -132,7 +132,10 @@ Aligned the solid fuel generator with GTCEu large boiler item-fuel semantics and
 
 ### Main Changes
 
-(Add details)
+- Added input-side circuit filtering to `HugeBusPartMachineMixin#createInventory`.
+- Reused `NotifiableCircuitItemStackHandler` for input-side huge bus circuit slots.
+- Preserved GTMThings huge item storage via `UnlimitedItemStackTransfer::new`.
+- Generated `build/libs/gtlcore-1.2.2.9-fix4.jar` for in-pack validation.
 
 ### Git Commits
 
@@ -144,7 +147,10 @@ Aligned the solid fuel generator with GTCEu large boiler item-fuel semantics and
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] `./gradlew spotlessCheck`
+- [OK] `JAVA_HOME=/usr/lib/jvm/java-21-openjdk PATH=/usr/lib/jvm/java-21-openjdk/bin:$PATH ./gradlew compileJava`
+- [OK] `JAVA_HOME=/usr/lib/jvm/java-21-openjdk PATH=/usr/lib/jvm/java-21-openjdk/bin:$PATH ./gradlew build`
+- [OK] User validated the generated jar in the modpack.
 
 ### Status
 
@@ -309,6 +315,39 @@ Fixed solid fuel generator pause handling, structure invalidation, controller-de
 | Hash | Message |
 |------|---------|
 | `c14c3a63` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 10: Fix huge input bus circuit routing
+
+**Date**: 2026-06-03
+**Task**: Fix huge input bus circuit routing
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Routed AE pattern programmed circuits for GTMThings huge item import buses and huge input dual hatches into the circuit slot while preserving huge item storage behavior; build jar was generated and user verified the fix in-pack.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1f5bc338` | (see git log) |
 
 ### Testing
 
