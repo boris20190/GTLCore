@@ -360,3 +360,38 @@ Routed AE pattern programmed circuits for GTMThings huge item import buses and h
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Fix huge input bus circuit handling
+
+**Date**: 2026-06-04
+**Task**: Fix huge input bus circuit handling
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Fixed configured circuit insertion to be simulate-safe and count-normalized, restored huge input bus item refund extraction, and documented item handler contracts.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `79376ce3` | (see git log) |
+| `a1f19d78` | (see git log) |
+| `b0119937` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
