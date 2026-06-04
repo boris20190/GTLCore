@@ -432,3 +432,36 @@ Hid GTMThings catalyst item and fluid handlers from external capabilities so AE 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Sync upstream and build validation jar
+
+**Date**: 2026-06-04
+**Task**: Sync upstream and build validation jar
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Merged upstream gtl-1431-skyblock into local main, refreshed origin, and built gtlcore-1.2.2.9-fix4.jar for manual modpack validation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dda1cba4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
