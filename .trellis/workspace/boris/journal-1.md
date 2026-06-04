@@ -395,3 +395,40 @@ Fixed configured circuit insertion to be simulate-safe and count-normalized, res
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: Fix catalyst capability blocking
+
+**Date**: 2026-06-04
+**Task**: Fix catalyst capability blocking
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+Hid GTMThings catalyst item and fluid handlers from external capabilities so AE blocking mode no longer sees manual catalyst slots as ordinary pattern inputs. Verified with Gradle build and in-pack gameplay testing.
+
+### Main Changes
+
+- Added constructor injections to GTMThings catalyst item and fluid handler mixins.
+- Disabled external capability exposure for catalyst handlers while preserving internal recipe handling and GUI access.
+- Archived the Trellis task with root-cause notes for the AE blocking-mode false positive.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6826c175` | (see git log) |
+
+### Testing
+
+- [OK] `./gradlew spotlessCheck compileJava`
+- [OK] `./gradlew build`
+- [OK] User verified the fix in the integrated modpack gameplay environment.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
