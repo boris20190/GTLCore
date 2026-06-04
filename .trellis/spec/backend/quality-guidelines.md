@@ -84,6 +84,12 @@ Mixin 必须满足：
 - 用 `getOffsetTimer() % n` 做低频刷新，参考 `PerformanceMonitorMachine` 和 `LightningRodMachine`。
 - 避免在 mixin hot path 中记录日志或执行阻塞 IO。
 
+### Item handler contracts
+
+- `insertItem(..., simulate = true, ...)` 必须保持无副作用，不能改写真实槽位或机器状态。
+- 直接调用底层 `storage.setStackInSlot(...)` 会绕过 handler 的 `getSlotLimit(...)` 和常规插入裁剪逻辑；写入前必须手动归一化数量或校验栈内容。
+- 作为配置/状态使用的物品槽位（例如编程电路槽）应只表达状态本身，不应保留外部输入栈的原始数量。
+
 ## Forbidden Patterns
 
 - 不经搜索直接改共享 ID 或配置默认值。
