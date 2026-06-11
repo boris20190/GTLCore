@@ -3,8 +3,11 @@ package org.gtlcore.gtlcore.common.machine.multiblock.generator;
 import org.gtlcore.gtlcore.utils.Registries;
 
 import com.gregtechceu.gtceu.api.GTValues;
+import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 import com.gregtechceu.gtceu.api.capability.recipe.CWURecipeCapability;
 import com.gregtechceu.gtceu.api.capability.recipe.EURecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.IO;
+import com.gregtechceu.gtceu.api.capability.recipe.IRecipeHandler;
 import com.gregtechceu.gtceu.api.machine.ConditionalSubscriptionHandler;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -28,6 +31,7 @@ import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,6 +45,10 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
     private int DysonSphereData;
     @Persisted
     private int DysonSpheredamageData;
+    @Persisted
+    private boolean upgradeTriggeredThisRecipe = false;
+    @Persisted
+    private boolean damageTriggeredThisRecipe = false;
 
     protected ConditionalSubscriptionHandler nightSubs;
 
@@ -64,6 +72,45 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
     }
 
     @Override
+    public long getMaxVoltage() {
+        long totalPower = 0;
+        // 获取所有输出仓（动力仓）
+        List<IEnergyContainer> outputContainers = getOutputContainers();
+        for (IEnergyContainer container : outputContainers) {
+            totalPower += container.getOutputVoltage() * container.getOutputAmperage();
+        }
+        if (totalPower <= 0) {
+            // 没有输出仓时，回退到父类逻辑（避免 NPE）
+            return super.getMaxVoltage();
+        }
+        int equivalentTier = getEquivalentTier(totalPower);
+        return GTValues.V[equivalentTier];
+    }
+
+    private int getEquivalentTier(long totalPower) {
+        int maxTier = GTValues.V.length - 1;
+        for (int tier = maxTier; tier >= 0; tier--) {
+            if (GTValues.V[tier] <= totalPower) {
+                return tier;
+            }
+        }
+        return 0;
+    }
+
+    private List<IEnergyContainer> getOutputContainers() {
+        List<IEnergyContainer> outputContainers = new ArrayList<>();
+        List<IRecipeHandler<?>> capabilities = this.capabilitiesProxy.get(IO.OUT, EURecipeCapability.CAP);
+        if (capabilities != null) {
+            for (IRecipeHandler<?> handler : capabilities) {
+                if (handler instanceof IEnergyContainer container) {
+                    outputContainers.add(container);
+                }
+            }
+        }
+        return outputContainers;
+    }
+
+    @Override
     public void onStructureFormed() {
         super.onStructureFormed();
         nightSubs.initialize(getLevel());
@@ -74,6 +121,7 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
     public void onStructureInvalid() {
         super.onStructureInvalid();
         cachedCheckPositions = null;
+        if (nightSubs != null) nightSubs.unsubscribe();
     }
 
     @Nullable
@@ -108,28 +156,42 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
     @Override
     public boolean onWorking() {
         boolean value = super.onWorking();
-        if (getRecipeLogic().getProgress() == 199 && getDysonSphereData() < 10000 &&
-                getRecipeLogic().getDuration() == 200) {
+        GTRecipe currentRecipe = getRecipeLogic().getLastRecipe();
+        if (currentRecipe == null) return value;
+
+        int progress = getRecipeLogic().getProgress();
+        int duration = getRecipeLogic().getDuration();
+        if (duration <= 0) return value;
+
+        if (!upgradeTriggeredThisRecipe && progress + 1 >= duration && getDysonSphereData() < 10000 && isLaunch(currentRecipe)) {
+            upgradeTriggeredThisRecipe = true;
             if (getDysonSpheredamageData() > 60) {
                 this.DysonSpheredamageData = 0;
             } else {
                 this.DysonSphereData++;
             }
         }
-        if (getRecipeLogic().getDuration() == 20 && getRecipeLogic().getProgress() == 19 &&
-                Math.random() < 0.01 * (1 + (double) getDysonSphereData() / 128) && getDysonSphereData() > 0) {
-            if (getDysonSpheredamageData() > 99) {
-                this.DysonSphereData--;
-                this.DysonSpheredamageData = 0;
-            } else {
-                this.DysonSpheredamageData++;
+
+        int targetProgress = (int) (duration * 0.95);
+        if (!damageTriggeredThisRecipe && progress >= targetProgress && getDysonSphereData() > 0 && !isLaunch(currentRecipe)) {
+            damageTriggeredThisRecipe = true;
+            if (Math.random() < 0.01 * (1 + (double) getDysonSphereData() / 256)) {
+                if (getDysonSpheredamageData() > 99) {
+                    this.DysonSphereData--;
+                    this.DysonSpheredamageData = 0;
+                } else {
+                    this.DysonSpheredamageData++;
+                }
             }
         }
+
         return value;
     }
 
     @Override
     public boolean beforeWorking(@Nullable GTRecipe recipe) {
+        upgradeTriggeredThisRecipe = false;
+        damageTriggeredThisRecipe = false;
         if (cachedCheckPositions != null) {
             Level level = getLevel();
             if (level != null) {
@@ -153,7 +215,7 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
     }
 
     private boolean isLaunch(GTRecipe recipe) {
-        return RecipeHelper.getOutputEUt(recipe) != GTValues.V[GTValues.MAX];
+        return RecipeHelper.getOutputEUt(recipe) < GTValues.V[GTValues.MAX];
     }
 
     private double getEfficiency() {
@@ -167,7 +229,7 @@ public class DysonSphereMachine extends WorkableElectricMultiblockMachine {
 
     @Override
     public long getOverclockVoltage() {
-        return (long) (GTValues.V[GTValues.MAX] * getDysonSphereData() * getEfficiency());
+        return (long) (2L * GTValues.V[GTValues.MAX] * getDysonSphereData() * getEfficiency());
     }
 
     @Nullable
