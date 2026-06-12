@@ -6,6 +6,7 @@ import org.gtlcore.gtlcore.client.gui.widget.PatternCycleWidget;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.MEPatternBufferPartMachineBase;
 import org.gtlcore.gtlcore.common.machine.multiblock.part.ae.WildcardRecipeHandlerTrait;
 import org.gtlcore.gtlcore.integration.ae2.AEUtils;
+import org.gtlcore.gtlcore.integration.ae2.handler.MEBufferPatternHelper;
 
 import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
@@ -199,7 +200,7 @@ public class MEWildcardPatternBufferPartMachine extends MEPatternBufferPartMachi
             List<IPatternDetails> patterns = WildcardPatternCompatImpl.expandPatterns(wildcardStack, getLevel());
 
             for (int i = 0; i < patterns.size(); i++) {
-                IPatternDetails pattern = patterns.get(i);
+                IPatternDetails pattern = MEBufferPatternHelper.createPrimaryOutputPattern(patterns.get(i), getLevel());
                 expandedPatterns.add(pattern);
                 patternToSlotMap.put(pattern, i);
                 activeSlotIndices.add(i);

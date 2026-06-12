@@ -151,6 +151,7 @@ public class MEStockingPatternBufferPartMachine extends MEPatternBufferPartMachi
                             return stack;
                         })
                         .setOnAddedTooltips((s, l) -> {
+                            appendPatternOutputTooltips(finalI, l);
                             if (cacheRecipe[finalI]) {
                                 l.add(Component.translatable("gtceu.machine.pattern.recipe.cache"));
                             }

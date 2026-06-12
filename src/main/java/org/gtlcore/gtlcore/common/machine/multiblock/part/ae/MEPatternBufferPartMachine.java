@@ -37,19 +37,20 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import appeng.api.crafting.IPatternDetails;
+import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.*;
 import appeng.api.stacks.*;
 import appeng.core.definitions.AEItems;
+import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.crafting.pattern.EncodedPatternItem;
 import appeng.crafting.pattern.ProcessingPatternItem;
 import com.google.common.collect.BiMap;
@@ -67,6 +68,8 @@ import java.util.stream.Stream;
 import static org.gtlcore.gtlcore.api.pattern.AdvancedBlockPattern.foundItem;
 
 public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
+
+    private static final int MAX_OUTPUT_TOOLTIP_LINES = 8;
 
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             MEPatternBufferPartMachine.class, MEPatternBufferPartMachineBase.MANAGED_FIELD_HOLDER);
@@ -113,8 +116,6 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
     private final boolean[] hasPatternArray;
     @DescSynced
     protected final boolean[] cacheRecipe;
-    @Persisted
-    protected boolean keepByProduct = false;
     @DescSynced
     @Persisted
     private int embeddedCircuitConfig = 1;
@@ -325,7 +326,7 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
         notifyProxySlotRemoved(slot);
     }
 
-    protected void refreshAllByProduct() {
+    protected void refreshAllPatternViews() {
         this.slot2PatternMap.clear();
         for (int i = 0; i < patternInventory.getSlots(); i++) {
             var pattern = patternInventory.getStackInSlot(i);
@@ -487,7 +488,6 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
 
     public boolean pasteFromTag(CompoundTag tag) {
         this.setCustomName(tag.getString("name"));
-        this.keepByProduct = tag.getBoolean("keepByProduct");
 
         var patternList = tag.getList("patterns", Tag.TAG_COMPOUND);
         int usedCount = 0;
@@ -540,7 +540,7 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
             }
         }
 
-        refreshAllByProduct();
+        refreshAllPatternViews();
 
         return true;
     }
@@ -575,7 +575,6 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
         tag.put("patterns", listPattern);
         tag.put("sharedCatalystInventory", sharedCatalystInventory.storage.serializeNBT());
         tag.put("sharedCircuitInventory", sharedCircuitInventory.storage.serializeNBT());
-        tag.putBoolean("keepByProduct", keepByProduct);
         tag.put("proxies", new LongArrayTag(getProxyPosList()));
 
         var tankList = new ListTag();
@@ -612,15 +611,6 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
     @Override
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
         super.attachConfigurators(configuratorPanel);
-        configuratorPanel.attachConfigurators(new IFancyConfiguratorButton.Toggle(
-                org.gtlcore.gtlcore.api.gui.GuiTextures.BUTTON_DISABLE_BYPRODUCT.getSubTexture(0, 0, 1, 0.5),
-                org.gtlcore.gtlcore.api.gui.GuiTextures.BUTTON_DISABLE_BYPRODUCT.getSubTexture(0, 0.5, 1, 0.5),
-                () -> !this.keepByProduct, (clickData, pressed) -> {
-                    this.keepByProduct = !pressed;
-                    refreshAllByProduct();
-                })
-                .setTooltipsSupplier(pressed -> List.of(Component.translatable("tooltip.gtlcore.disable_by_product").setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW))
-                        .append(Component.translatable(pressed ? "gtceu.multiblock.universal.distinct.yes" : "gtceu.multiblock.universal.distinct.no")))));
 
         // Visibility in ME Pattern Access Terminal
         configuratorPanel.attachConfigurators(new IFancyConfiguratorButton.Toggle(
@@ -673,6 +663,7 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
                             return stack;
                         })
                         .setOnAddedTooltips((s, l) -> {
+                            appendPatternOutputTooltips(finalI, l);
                             if (cacheRecipe[finalI])
                                 l.add(Component.translatable("gtceu.machine.pattern.recipe.cache"));
                         })
@@ -681,6 +672,54 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
             }
         }
         return group;
+    }
+
+    protected void appendPatternOutputTooltips(int slot, List<Component> tooltips) {
+        var outputs = getActualPatternOutputs(patternInventory.getStackInSlot(slot));
+        if (outputs.size() <= 1) return;
+
+        tooltips.add(Component.translatable("tooltip.gtlcore.pattern_buffer_ae_tracks_primary")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltips.add(Component.translatable("tooltip.gtlcore.pattern_buffer_actual_outputs")
+                .withStyle(ChatFormatting.GRAY));
+
+        int shown = Math.min(outputs.size(), MAX_OUTPUT_TOOLTIP_LINES);
+        for (int i = 0; i < shown; i++) {
+            tooltips.add(formatPatternOutput(outputs.get(i)));
+        }
+        int remaining = outputs.size() - shown;
+        if (remaining > 0) {
+            tooltips.add(Component.translatable("tooltip.gtlcore.pattern_buffer_outputs_more", remaining)
+                    .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    private List<GenericStack> getActualPatternOutputs(ItemStack patternStack) {
+        var level = getLevel();
+        if (level == null || patternStack.isEmpty()) return List.of();
+        if (PatternDetailsHelper.decodePattern(patternStack, level) instanceof AEProcessingPattern processingPattern) {
+            return Arrays.stream(processingPattern.getSparseOutputs())
+                    .filter(Objects::nonNull)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    private static Component formatPatternOutput(GenericStack output) {
+        Component name;
+        if (output.what() instanceof AEItemKey itemKey) {
+            name = itemKey.toStack().getHoverName();
+        } else if (output.what() instanceof AEFluidKey fluidKey) {
+            name = FluidStack.create(fluidKey.getFluid(), output.amount()).getDisplayName();
+        } else {
+            name = Component.literal(output.what().toString());
+        }
+
+        return Component.literal("- ")
+                .withStyle(ChatFormatting.DARK_GRAY)
+                .append(Component.empty().append(name).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" x" + FormattingUtil.formatNumbers(output.amount()))
+                        .withStyle(ChatFormatting.GRAY));
     }
 
     // ========================================
@@ -726,7 +765,7 @@ public class MEPatternBufferPartMachine extends MEPatternBufferPartMachineBase {
         if (!stack.isEmpty()) {
             var internalSlot = internalInventory[slot];
             return realPatternHelper.processPatternWithCircuit(
-                    stack, internalSlot.getCacheManager()::setCircuitCache, getLevel(), keepByProduct);
+                    stack, internalSlot.getCacheManager()::setCircuitCache, getLevel());
         }
         return null;
     }

@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  * 样板电路处理模块
  * 负责处理样板中的电路逻辑，包括：
  * - 电路提取和存储
- * - 样板重构（移除电路, 酌情删除副产物）
+ * - 样板重构（移除电路, 让 AE 只追踪主产物）
  */
 public class MEBufferPatternHelper {
 
@@ -41,25 +41,27 @@ public class MEBufferPatternHelper {
     }
 
     /**
-     * 处理包含电路的样板：提取电路并返回无电路并酌情删除副产物的样板
+     * 处理包含电路的样板：提取电路并返回无电路且仅暴露主产物给 AE 的样板
      * 
      * @param originalPatternStack 原始样板
      * @param storedCircuit        存储电路的引用
-     * @param keepByProduct        是否保留副产物
      * @return 处理结果，包含无电路样板和提取的电路
      */
-    public IPatternDetails processPatternWithCircuit(ItemStack originalPatternStack, Consumer<Integer> storedCircuit, Level level, boolean keepByProduct) {
+    public IPatternDetails processPatternWithCircuit(ItemStack originalPatternStack, Consumer<Integer> storedCircuit, Level level) {
         if (PatternDetailsHelper.decodePattern(originalPatternStack, level) instanceof AEProcessingPattern processingPattern) {
             int extractedCircuit = extractCircuitFromPattern(processingPattern);
-
-            if (extractedCircuit < 0) {
-                if (keepByProduct) return processingPattern;
-            } else storedCircuit.accept(extractedCircuit);
-
-            return createPatternWithoutCircuit(processingPattern, level, keepByProduct);
+            if (extractedCircuit >= 0) storedCircuit.accept(extractedCircuit);
+            return createProcessingPatternView(processingPattern, level, true);
         } else {
             return null;
         }
+    }
+
+    public static IPatternDetails createPrimaryOutputPattern(IPatternDetails pattern, Level level) {
+        if (pattern instanceof AEProcessingPattern processingPattern) {
+            return createProcessingPatternView(processingPattern, level, false);
+        }
+        return pattern;
     }
 
     /**
@@ -153,19 +155,21 @@ public class MEBufferPatternHelper {
     }
 
     /**
-     * 创建一个移除了电路的新样板
+     * 创建一个给 AE 使用的处理样板视图
      *
      * @param pattern 原始处理样板
-     * @return 无电路并酌情删除副产物的样板
+     * @return 仅暴露主产物的样板
      */
-    private IPatternDetails createPatternWithoutCircuit(AEProcessingPattern pattern, Level level, boolean keepByProduct) {
+    private static IPatternDetails createProcessingPatternView(AEProcessingPattern pattern, Level level, boolean removeCircuit) {
         var originalInputs = pattern.getSparseInputs();
         var originalOutputs = pattern.getSparseOutputs();
+        var primary = Arrays.stream(originalOutputs).filter(Objects::nonNull).findFirst();
+        if (primary.isEmpty()) return pattern;
+
         var filteredInputs = new ObjectArrayList<GenericStack>();
-        GenericStack[] filteredOutputs = originalOutputs;
 
         for (var input : Arrays.stream(originalInputs).filter(Objects::nonNull).toList()) {
-            if (input.what() instanceof AEItemKey itemKey) {
+            if (removeCircuit && input.what() instanceof AEItemKey itemKey) {
                 if (itemKey.getItem() == GTItems.INTEGRATED_CIRCUIT.asItem()) {
                     continue; // 跳过电路
                 }
@@ -176,11 +180,8 @@ public class MEBufferPatternHelper {
             filteredInputs.addAll(Arrays.stream(originalInputs).filter(Objects::nonNull).toList());
         }
 
-        if (!keepByProduct) {
-            var primary = Arrays.stream(originalOutputs).filter(Objects::nonNull).findFirst();
-            if (primary.isPresent()) filteredOutputs = new GenericStack[] { primary.get() };
-        }
-
-        return PatternDetailsHelper.decodePattern(PatternDetailsHelper.encodeProcessingPattern(filteredInputs.toArray(new GenericStack[0]), filteredOutputs), level);
+        var decoded = PatternDetailsHelper.decodePattern(PatternDetailsHelper.encodeProcessingPattern(
+                filteredInputs.toArray(new GenericStack[0]), new GenericStack[] { primary.get() }), level);
+        return decoded == null ? pattern : decoded;
     }
 }

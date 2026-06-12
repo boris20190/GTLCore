@@ -714,6 +714,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.2"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.3"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
+                        Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("gtceu.machine.me_mini_pattern_buffer.desc.0"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
@@ -734,6 +735,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.3"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.5"),
+                        Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
@@ -753,6 +755,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.3"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.5"),
+                        Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("gtlcore.machine.me_stocking_pattern_buffer.desc.0"),
                         Component.translatable("gtlcore.machine.me_stocking_pattern_buffer.desc.1"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
@@ -775,6 +778,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.3"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.5"),
+                        Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
