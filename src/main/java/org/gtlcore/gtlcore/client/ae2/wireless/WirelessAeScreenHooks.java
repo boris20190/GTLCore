@@ -2,6 +2,7 @@ package org.gtlcore.gtlcore.client.ae2.wireless;
 
 import org.gtlcore.gtlcore.integration.ae2.wireless.WirelessAeNetworkRuntime;
 import org.gtlcore.gtlcore.integration.ae2.wireless.WirelessAePackets;
+import org.gtlcore.gtlcore.integration.wildcard.WildcardPatternCompat;
 
 import com.gregtechceu.gtceu.api.gui.fancy.FancyMachineUIWidget;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyUIProvider;
@@ -34,8 +35,10 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -49,8 +52,12 @@ final class WirelessAeScreenHooks {
     private static final int PANEL_MARGIN = 6;
     private static final int FANCY_HEADER_HEIGHT = 24;
     private static final int NETWORK_ROW_HEIGHT = 24;
+    private static final int FANCY_SCROLLBAR_WIDTH = 6;
+    private static final int FANCY_SCROLLBAR_GAP = 4;
     private static final IGuiTexture WIRELESS_TAB_ICON = WirelessAeScreenHooks::drawWirelessTabIcon;
     private static final ResourceLocation WIRELESS_TAB_TEXTURE = new ResourceLocation("gtlcore", "textures/gui/wireless/tab_wireless_selected.png");
+    private static final String WILDCARD_HELD_ITEM_UI_CLASS = "org.leodreamer.wildcard_pattern.wildcard.gui.WildcardHeldItemUI";
+    private static final String WILDCARD_FANCY_PROVIDER_CLASS = "org.leodreamer.wildcard_pattern.wildcard.gui.WildcardFancyUIProvider";
 
     private static final String[] POSITION_METHODS = {
             "getBlockPos",
@@ -88,14 +95,23 @@ final class WirelessAeScreenHooks {
     private static Direction recentClickedSide;
     private static Vec3 recentClickedLocation;
     private static long recentClickedAtMillis;
+    private static final Map<ReflectionKey, Optional<Method>> METHOD_CACHE = new HashMap<>();
+    private static final Map<ReflectionKey, Optional<Field>> FIELD_CACHE = new HashMap<>();
     private static Screen cachedScreen;
     private static BlockPos cachedTargetPos;
+    private static Screen cachedPositionScreen;
+    private static AbstractContainerMenu cachedPositionMenu;
+    private static List<BlockPos> cachedStaticTargetPositions = List.of();
     private static Screen embeddedScreen;
     private static BlockPos embeddedTargetPos;
     private static TargetHit embeddedTargetHit;
     private static List<WirelessAePackets.TargetNetworkEntry> embeddedEntries = List.of();
+    private static WirelessAePackets.TargetNetworkEntry embeddedConnectedEntry;
+    private static WirelessAePackets.TargetNetworkEntry embeddedDisconnectableEntry;
     private static boolean embeddedHasData;
     private static boolean embeddedLoading;
+    private static int embeddedScrollOffset;
+    private static boolean embeddedDraggingScrollbar;
     private static long embeddedRequestAtMillis;
     private static long embeddedRefreshAfterMillis;
     private static Screen fancyScreen;
@@ -152,6 +168,9 @@ final class WirelessAeScreenHooks {
         if (cachedScreen != screen) {
             cachedScreen = screen;
             cachedTargetPos = null;
+            cachedPositionScreen = null;
+            cachedPositionMenu = null;
+            cachedStaticTargetPositions = List.of();
         }
 
         if (cachedTargetPos != null && shouldOfferWirelessTab(level, cachedTargetPos)) {
@@ -175,13 +194,28 @@ final class WirelessAeScreenHooks {
         addCandidate(candidates, getCrosshairBlockPos());
 
         AbstractContainerMenu menu = containerScreen.getMenu();
-        for (BlockPos pos : findTargetPositions(menu)) {
-            addCandidate(candidates, pos);
-        }
-        for (BlockPos pos : findTargetPositions(screen)) {
+        for (BlockPos pos : getStaticTargetPositions(screen, menu)) {
             addCandidate(candidates, pos);
         }
         return candidates;
+    }
+
+    private static List<BlockPos> getStaticTargetPositions(Screen screen, AbstractContainerMenu menu) {
+        if (cachedPositionScreen == screen && cachedPositionMenu == menu) {
+            return cachedStaticTargetPositions;
+        }
+
+        List<BlockPos> positions = new ArrayList<>();
+        for (BlockPos pos : findTargetPositions(menu)) {
+            addCandidate(positions, pos);
+        }
+        for (BlockPos pos : findTargetPositions(screen)) {
+            addCandidate(positions, pos);
+        }
+        cachedPositionScreen = screen;
+        cachedPositionMenu = menu;
+        cachedStaticTargetPositions = List.copyOf(positions);
+        return cachedStaticTargetPositions;
     }
 
     private static void installNativeWirelessWidgets(ModularUIGuiContainer screen, BlockPos targetPos) {
@@ -189,10 +223,33 @@ final class WirelessAeScreenHooks {
         if (fancy == null) {
             return;
         }
+        if (isWildcardPatternHeldItemUi(fancy)) {
+            return;
+        }
 
         WirelessAeFancyPageProvider provider = getOrCreateFancyProvider(screen, targetPos, fancy);
         ensureFancyPageList(fancy, provider);
         ensureWirelessSideTab(fancy.getSideTabsWidget(), provider);
+    }
+
+    private static boolean isWildcardPatternHeldItemUi(FancyMachineUIWidget fancy) {
+        if (!WildcardPatternCompat.isLoaded()) {
+            return false;
+        }
+        return hasTypeName(fancy, WILDCARD_HELD_ITEM_UI_CLASS) ||
+                hasTypeName(fancy.getMainPage(), WILDCARD_FANCY_PROVIDER_CLASS);
+    }
+
+    private static boolean hasTypeName(Object target, String typeName) {
+        if (target == null) {
+            return false;
+        }
+        for (Class<?> type = target.getClass(); type != null; type = type.getSuperclass()) {
+            if (type.getName().equals(typeName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static FancyMachineUIWidget findFancyMachineUI(ModularUIGuiContainer screen) {
@@ -211,22 +268,11 @@ final class WirelessAeScreenHooks {
             fancyProvider = new WirelessAeFancyPageProvider(
                     screen,
                     fancyTargetPos,
-                    mainPage,
-                    snapshotOriginalSubTabs(fancy.getSideTabsWidget()));
+                    mainPage);
         } else {
             fancyProvider.updateTarget(screen, targetPos);
         }
         return fancyProvider;
-    }
-
-    private static List<IFancyUIProvider> snapshotOriginalSubTabs(TabsWidget tabsWidget) {
-        List<IFancyUIProvider> original = new ArrayList<>();
-        for (IFancyUIProvider tab : tabsWidget.getSubTabs()) {
-            if (!(tab instanceof WirelessAeFancyPageProvider)) {
-                original.add(tab);
-            }
-        }
-        return List.copyOf(original);
     }
 
     private static void ensureFancyPageList(FancyMachineUIWidget fancy, WirelessAeFancyPageProvider provider) {
@@ -254,8 +300,7 @@ final class WirelessAeScreenHooks {
     private static void ensureWirelessSideTab(TabsWidget tabsWidget, WirelessAeFancyPageProvider provider) {
         List<IFancyUIProvider> subTabs = tabsWidget.getSubTabs();
         subTabs.removeIf(tab -> tab instanceof WirelessAeFancyPageProvider);
-        int insertIndex = Math.min(1, subTabs.size());
-        subTabs.add(insertIndex, provider);
+        subTabs.add(provider);
     }
 
     private static boolean isEmbeddedPanelActive(Screen screen, BlockPos targetPos) {
@@ -267,8 +312,12 @@ final class WirelessAeScreenHooks {
         embeddedTargetPos = targetPos.immutable();
         embeddedTargetHit = findTargetHit(embeddedTargetPos);
         embeddedEntries = List.of();
+        embeddedConnectedEntry = null;
+        embeddedDisconnectableEntry = null;
         embeddedHasData = false;
         embeddedLoading = false;
+        embeddedScrollOffset = 0;
+        embeddedDraggingScrollbar = false;
         embeddedRefreshAfterMillis = 0L;
         requestEmbeddedData(embeddedTargetPos);
     }
@@ -278,8 +327,12 @@ final class WirelessAeScreenHooks {
         embeddedTargetPos = null;
         embeddedTargetHit = null;
         embeddedEntries = List.of();
+        embeddedConnectedEntry = null;
+        embeddedDisconnectableEntry = null;
         embeddedHasData = false;
         embeddedLoading = false;
+        embeddedScrollOffset = 0;
+        embeddedDraggingScrollbar = false;
         embeddedRequestAtMillis = 0L;
         embeddedRefreshAfterMillis = 0L;
     }
@@ -322,6 +375,7 @@ final class WirelessAeScreenHooks {
                 return;
             }
             embeddedEntries = List.copyOf(entries);
+            updateEmbeddedEntryCache();
             embeddedHasData = true;
             embeddedLoading = false;
             embeddedRefreshAfterMillis = 0L;
@@ -350,6 +404,7 @@ final class WirelessAeScreenHooks {
         int contentY = y + FANCY_HEADER_HEIGHT + 8;
         int contentWidth = width - (PANEL_MARGIN + 6) * 2;
         WirelessAePackets.TargetNetworkEntry connected = getConnectedEntry();
+        WirelessAePackets.TargetNetworkEntry disconnectable = getDisconnectableEntry();
 
         WirelessAeStyle.drawStatusLight(graphics, contentX, contentY, connected != null);
         WirelessAeStyle.drawTrimmedString(
@@ -386,17 +441,32 @@ final class WirelessAeScreenHooks {
             return;
         }
 
-        int bottomReserve = connected == null ? 8 : 36;
+        int bottomReserve = disconnectable == null ? 8 : 36;
         int maxRows = Math.max(1, (y + height - bottomReserve - listY) / NETWORK_ROW_HEIGHT);
-        int rows = Math.min(embeddedEntries.size(), maxRows);
+        embeddedScrollOffset = WirelessAeStyle.clampScrollOffset(embeddedScrollOffset, embeddedEntries.size(), maxRows);
+        boolean hasScrollbar = WirelessAeStyle.needsScrollbar(embeddedEntries.size(), maxRows);
+        int rowWidth = contentWidth - (hasScrollbar ? FANCY_SCROLLBAR_WIDTH + FANCY_SCROLLBAR_GAP : 0);
+        int rows = Math.min(maxRows, Math.max(0, embeddedEntries.size() - embeddedScrollOffset));
+        boolean lockedByCableConnection = isLockedByCableConnection();
         for (int i = 0; i < rows; i++) {
-            WirelessAePackets.TargetNetworkEntry entry = embeddedEntries.get(i);
+            WirelessAePackets.TargetNetworkEntry entry = embeddedEntries.get(embeddedScrollOffset + i);
             int rowY = listY + i * NETWORK_ROW_HEIGHT;
-            boolean hovered = isInsideRect(mouseX, mouseY, contentX, rowY, contentWidth, 20);
-            drawNetworkRow(graphics, contentX, rowY, contentWidth, entry, hovered);
+            boolean hovered = !lockedByCableConnection && !entry.connected() && isInsideRect(mouseX, mouseY, contentX, rowY, rowWidth, 20);
+            drawNetworkRow(graphics, contentX, rowY, rowWidth, entry, hovered);
         }
 
-        if (connected != null) {
+        if (hasScrollbar) {
+            WirelessAeStyle.drawScrollbar(
+                    graphics,
+                    contentX + contentWidth - FANCY_SCROLLBAR_WIDTH,
+                    listY,
+                    maxRows * NETWORK_ROW_HEIGHT - 4,
+                    embeddedEntries.size(),
+                    maxRows,
+                    embeddedScrollOffset);
+        }
+
+        if (disconnectable != null) {
             int disconnectY = y + height - 30;
             WirelessAeStyle.drawSeparator(graphics, contentX, disconnectY - 5, contentWidth);
             boolean hovered = isInsideRect(mouseX, mouseY, contentX, disconnectY, contentWidth, 20);
@@ -446,23 +516,80 @@ final class WirelessAeScreenHooks {
         int contentWidth = width - (PANEL_MARGIN + 6) * 2;
         int listY = contentY + 18;
         WirelessAePackets.TargetNetworkEntry connected = getConnectedEntry();
-        int bottomReserve = connected == null ? 8 : 36;
+        WirelessAePackets.TargetNetworkEntry disconnectable = getDisconnectableEntry();
+        int bottomReserve = disconnectable == null ? 8 : 36;
         int maxRows = Math.max(1, (y + height - bottomReserve - listY) / NETWORK_ROW_HEIGHT);
-        int rows = Math.min(embeddedEntries.size(), maxRows);
+        embeddedScrollOffset = WirelessAeStyle.clampScrollOffset(embeddedScrollOffset, embeddedEntries.size(), maxRows);
+        boolean hasScrollbar = WirelessAeStyle.needsScrollbar(embeddedEntries.size(), maxRows);
+        if (hasScrollbar && isInsideRect(mouseX, mouseY, contentX + contentWidth - FANCY_SCROLLBAR_WIDTH, listY, FANCY_SCROLLBAR_WIDTH, maxRows * NETWORK_ROW_HEIGHT - 4)) {
+            embeddedDraggingScrollbar = true;
+            updateEmbeddedScrollOffsetFromMouse(mouseY, listY, maxRows * NETWORK_ROW_HEIGHT - 4, maxRows);
+            return;
+        }
+
+        int rowWidth = contentWidth - (hasScrollbar ? FANCY_SCROLLBAR_WIDTH + FANCY_SCROLLBAR_GAP : 0);
+        int rows = Math.min(maxRows, Math.max(0, embeddedEntries.size() - embeddedScrollOffset));
+        boolean lockedByCableConnection = isLockedByCableConnection();
         for (int i = 0; i < rows; i++) {
             int rowY = listY + i * NETWORK_ROW_HEIGHT;
-            if (isInsideRect(mouseX, mouseY, contentX, rowY, contentWidth, 20)) {
-                connectEmbeddedEntry(targetPos, embeddedEntries.get(i));
+            if (isInsideRect(mouseX, mouseY, contentX, rowY, rowWidth, 20)) {
+                if (lockedByCableConnection) {
+                    return;
+                }
+                connectEmbeddedEntry(targetPos, embeddedEntries.get(embeddedScrollOffset + i));
                 return;
             }
         }
 
-        if (connected != null) {
+        if (disconnectable != null) {
             int disconnectY = y + height - 30;
             if (isInsideRect(mouseX, mouseY, contentX, disconnectY, contentWidth, 20)) {
-                disconnectEmbeddedEntry(targetPos, connected);
+                disconnectEmbeddedEntry(targetPos, disconnectable);
             }
         }
+    }
+
+    private static boolean scrollEmbedded(double wheelDelta, int x, int y, int width, int height,
+                                          double mouseX, double mouseY) {
+        if (!embeddedHasData || embeddedEntries.isEmpty() || !isInsideRect(mouseX, mouseY, x, y, width, height)) {
+            return false;
+        }
+
+        int listY = y + FANCY_HEADER_HEIGHT + 8 + 18;
+        WirelessAePackets.TargetNetworkEntry disconnectable = getDisconnectableEntry();
+        int bottomReserve = disconnectable == null ? 8 : 36;
+        int visibleRows = Math.max(1, (y + height - bottomReserve - listY) / NETWORK_ROW_HEIGHT);
+        int nextOffset = WirelessAeStyle.clampScrollOffset(
+                embeddedScrollOffset - (int) Math.signum(wheelDelta),
+                embeddedEntries.size(),
+                visibleRows);
+        if (nextOffset == embeddedScrollOffset) {
+            return false;
+        }
+        embeddedScrollOffset = nextOffset;
+        return true;
+    }
+
+    private static boolean updateEmbeddedScrollbarDrag(double mouseY, int x, int y, int width, int height) {
+        if (!embeddedDraggingScrollbar) {
+            return false;
+        }
+        int listY = y + FANCY_HEADER_HEIGHT + 8 + 18;
+        WirelessAePackets.TargetNetworkEntry disconnectable = getDisconnectableEntry();
+        int bottomReserve = disconnectable == null ? 8 : 36;
+        int visibleRows = Math.max(1, (y + height - bottomReserve - listY) / NETWORK_ROW_HEIGHT);
+        updateEmbeddedScrollOffsetFromMouse(mouseY, listY, visibleRows * NETWORK_ROW_HEIGHT - 4, visibleRows);
+        return true;
+    }
+
+    private static void updateEmbeddedScrollOffsetFromMouse(double mouseY, int listY, int scrollbarHeight,
+                                                            int visibleRows) {
+        embeddedScrollOffset = WirelessAeStyle.scrollbarOffsetFromMouse(
+                mouseY,
+                listY,
+                scrollbarHeight,
+                embeddedEntries.size(),
+                visibleRows);
     }
 
     private static void connectEmbeddedEntry(BlockPos targetPos, WirelessAePackets.TargetNetworkEntry entry) {
@@ -499,9 +626,11 @@ final class WirelessAeScreenHooks {
             updated.add(new WirelessAePackets.TargetNetworkEntry(
                     entry.frequency(),
                     entry.name(),
+                    entry.frequency().equals(frequency),
                     entry.frequency().equals(frequency)));
         }
         embeddedEntries = List.copyOf(updated);
+        updateEmbeddedEntryCache();
         embeddedHasData = true;
     }
 
@@ -511,12 +640,31 @@ final class WirelessAeScreenHooks {
     }
 
     private static WirelessAePackets.TargetNetworkEntry getConnectedEntry() {
+        return embeddedConnectedEntry;
+    }
+
+    private static WirelessAePackets.TargetNetworkEntry getDisconnectableEntry() {
+        return embeddedDisconnectableEntry;
+    }
+
+    private static void updateEmbeddedEntryCache() {
+        embeddedConnectedEntry = null;
+        embeddedDisconnectableEntry = null;
         for (WirelessAePackets.TargetNetworkEntry entry : embeddedEntries) {
-            if (entry.connected()) {
-                return entry;
+            if (entry.connected() && embeddedConnectedEntry == null) {
+                embeddedConnectedEntry = entry;
+            }
+            if (entry.disconnectable() && embeddedDisconnectableEntry == null) {
+                embeddedDisconnectableEntry = entry;
+            }
+            if (embeddedConnectedEntry != null && embeddedDisconnectableEntry != null) {
+                return;
             }
         }
-        return null;
+    }
+
+    private static boolean isLockedByCableConnection() {
+        return getConnectedEntry() != null && getDisconnectableEntry() == null;
     }
 
     private static boolean isInsideRect(double mouseX, double mouseY, int x, int y, int width, int height) {
@@ -628,7 +776,6 @@ final class WirelessAeScreenHooks {
         }
 
         try {
-            method.setAccessible(true);
             return method.invoke(target);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             return null;
@@ -636,17 +783,29 @@ final class WirelessAeScreenHooks {
     }
 
     private static Method findNoArgMethod(Class<?> type, String methodName) {
+        return METHOD_CACHE.computeIfAbsent(
+                new ReflectionKey(type, methodName),
+                WirelessAeScreenHooks::findNoArgMethodUncached)
+                .orElse(null);
+    }
+
+    private static Optional<Method> findNoArgMethodUncached(ReflectionKey key) {
+        Class<?> type = key.type();
+        String methodName = key.name();
         for (Class<?> current = type; current != null; current = current.getSuperclass()) {
             try {
                 Method method = current.getDeclaredMethod(methodName);
                 if (method.getParameterCount() == 0) {
-                    return method;
+                    method.setAccessible(true);
+                    return Optional.of(method);
                 }
             } catch (NoSuchMethodException ignored) {
                 // Try parent class.
+            } catch (RuntimeException ignored) {
+                return Optional.empty();
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private static Object readField(Object target, String fieldName) {
@@ -660,7 +819,6 @@ final class WirelessAeScreenHooks {
         }
 
         try {
-            field.setAccessible(true);
             return field.get(target);
         } catch (IllegalAccessException | RuntimeException ignored) {
             return null;
@@ -678,7 +836,6 @@ final class WirelessAeScreenHooks {
         }
 
         try {
-            field.setAccessible(true);
             field.set(target, value);
         } catch (IllegalAccessException | RuntimeException ignored) {
             // Keep the UI usable even if a future GT version changes this field.
@@ -686,29 +843,42 @@ final class WirelessAeScreenHooks {
     }
 
     private static Field findField(Class<?> type, String fieldName) {
+        return FIELD_CACHE.computeIfAbsent(
+                new ReflectionKey(type, fieldName),
+                WirelessAeScreenHooks::findFieldUncached)
+                .orElse(null);
+    }
+
+    private static Optional<Field> findFieldUncached(ReflectionKey key) {
+        Class<?> type = key.type();
+        String fieldName = key.name();
         for (Class<?> current = type; current != null; current = current.getSuperclass()) {
             try {
-                return current.getDeclaredField(fieldName);
+                Field field = current.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                return Optional.of(field);
             } catch (NoSuchFieldException ignored) {
                 // Try parent class.
+            } catch (RuntimeException ignored) {
+                return Optional.empty();
             }
         }
-        return null;
+        return Optional.empty();
     }
+
+    private record ReflectionKey(Class<?> type, String name) {}
 
     private static final class WirelessAeFancyPageProvider implements IFancyUIProvider {
 
         private AbstractContainerScreen<?> screen;
         private BlockPos targetPos;
         private final IFancyUIProvider mainPage;
-        private final List<IFancyUIProvider> siblingTabs;
 
         private WirelessAeFancyPageProvider(AbstractContainerScreen<?> screen, BlockPos targetPos,
-                                            IFancyUIProvider mainPage, List<IFancyUIProvider> siblingTabs) {
+                                            IFancyUIProvider mainPage) {
             this.screen = screen;
             this.targetPos = targetPos.immutable();
             this.mainPage = mainPage;
-            this.siblingTabs = siblingTabs;
         }
 
         private void updateTarget(AbstractContainerScreen<?> screen, BlockPos targetPos) {
@@ -735,11 +905,7 @@ final class WirelessAeScreenHooks {
         @Override
         public void attachSideTabs(TabsWidget tabsWidget) {
             tabsWidget.setMainTab(mainPage);
-            for (IFancyUIProvider tab : siblingTabs) {
-                if (!(tab instanceof WirelessAeFancyPageProvider)) {
-                    tabsWidget.attachSubTab(tab);
-                }
-            }
+            mainPage.attachSideTabs(tabsWidget);
             ensureWirelessSideTab(tabsWidget, this);
         }
 
@@ -788,16 +954,23 @@ final class WirelessAeScreenHooks {
 
         @Override
         public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+            if (updateEmbeddedScrollbarDrag(mouseY, getPositionX(), getPositionY(), getSizeWidth(), getSizeHeight())) {
+                return true;
+            }
             return isMouseOverElement(mouseX, mouseY);
         }
 
         @Override
         public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            embeddedDraggingScrollbar = false;
             return isMouseOverElement(mouseX, mouseY);
         }
 
         @Override
         public boolean mouseWheelMove(double mouseX, double mouseY, double wheelDelta) {
+            if (scrollEmbedded(wheelDelta, getPositionX(), getPositionY(), getSizeWidth(), getSizeHeight(), mouseX, mouseY)) {
+                return true;
+            }
             return isMouseOverElement(mouseX, mouseY);
         }
     }

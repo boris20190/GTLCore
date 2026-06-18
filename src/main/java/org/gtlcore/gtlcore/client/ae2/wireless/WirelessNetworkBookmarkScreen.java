@@ -1,127 +1,103 @@
 package org.gtlcore.gtlcore.client.ae2.wireless;
 
 import org.gtlcore.gtlcore.integration.ae2.wireless.WirelessAePackets;
-import org.gtlcore.gtlcore.integration.ae2.wireless.WirelessAeTargetMenu;
+import org.gtlcore.gtlcore.integration.ae2.wireless.WirelessNetworkBookmarkMenu;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
-public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTargetMenu> {
+import org.jetbrains.annotations.NotNull;
 
-    private static final int IMAGE_WIDTH = 248;
+import java.util.UUID;
+
+public class WirelessNetworkBookmarkScreen extends AbstractContainerScreen<WirelessNetworkBookmarkMenu> {
+
+    private static final int IMAGE_WIDTH = 236;
     private static final int IMAGE_HEIGHT = 196;
     private static final int CONTENT_X = 14;
     private static final int TITLE_Y = 8;
-    private static final int STATUS_Y = 31;
+    private static final int STATUS_Y = 30;
     private static final int LIST_Y = 54;
     private static final int ROW_HEIGHT = 24;
     private static final int BUTTON_HEIGHT = 20;
-    private static final int DISCONNECT_GAP = 8;
     private static final int SCROLLBAR_WIDTH = 6;
     private static final int SCROLLBAR_GAP = 4;
 
-    private final WirelessAeTargetMenu.Entry connectedEntry;
-    private final WirelessAeTargetMenu.Entry disconnectableEntry;
-    private final boolean lockedByCableConnection;
+    private final UUID favoriteNetwork;
+    private final String favoriteName;
     private int scrollOffset;
     private boolean draggingScrollbar;
 
-    public WirelessAeTargetScreen(WirelessAeTargetMenu menu, Inventory inventory, Component title) {
+    public WirelessNetworkBookmarkScreen(WirelessNetworkBookmarkMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = IMAGE_WIDTH;
         this.imageHeight = IMAGE_HEIGHT;
-        this.connectedEntry = findConnectedEntry();
-        this.disconnectableEntry = findDisconnectableEntry();
-        this.lockedByCableConnection = this.connectedEntry != null && this.disconnectableEntry == null;
+        this.favoriteNetwork = menu.getFavoriteNetwork();
+        this.favoriteName = findFavoriteName(this.favoriteNetwork);
     }
 
     @Override
     protected void init() {
         super.init();
         clampScrollOffset();
-        this.addRenderableWidget(WirelessAeStyle.sideTab(
-                this.leftPos - 28,
-                this.topPos + 8,
-                Component.translatable("tooltip.gtlcore.wireless_target.back"),
-                button -> WirelessAePackets.CHANNEL.sendToServer(
-                        new WirelessAePackets.OpenNormalTargetMenuPacket(this.menu.getOriginPos()))));
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+    protected void renderBg(@NotNull GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         WirelessAeStyle.drawPanel(graphics, this.leftPos, this.topPos, this.imageWidth, this.imageHeight);
         WirelessAeStyle.drawInsetPanel(
                 graphics,
                 this.leftPos + 10,
-                this.topPos + 26,
+                this.topPos + 24,
                 this.imageWidth - 20,
-                this.imageHeight - 38);
+                this.imageHeight - 34);
         drawNetworkRows(graphics, mouseX, mouseY);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(this.font, this.title, CONTENT_X, TITLE_Y, WirelessAeStyle.TEXT, false);
-        WirelessAeTargetMenu.Entry connectedEntry = getConnectedEntry();
-        WirelessAeStyle.drawStatusLight(graphics, CONTENT_X, STATUS_Y - 1, connectedEntry != null);
+        WirelessAeStyle.drawStatusLight(graphics, CONTENT_X, STATUS_Y - 1, this.favoriteNetwork != null);
         WirelessAeStyle.drawTrimmedString(
                 graphics,
                 this.font,
-                connectedEntry == null ? Component.translatable("label.gtlcore.wireless_target.current_disconnected") : Component.translatable("label.gtlcore.wireless_target.current_connected",
-                        connectedEntry.name()),
+                this.favoriteName == null ? Component.translatable("label.gtlcore.wireless_bookmark.no_favorite") : Component.translatable("label.gtlcore.wireless_bookmark.favorite", this.favoriteName),
                 CONTENT_X + 14,
                 STATUS_Y,
                 this.imageWidth - CONTENT_X * 2 - 14,
-                connectedEntry == null ? WirelessAeStyle.MUTED_TEXT : WirelessAeStyle.ONLINE_TEXT);
+                this.favoriteName == null ? WirelessAeStyle.MUTED_TEXT : WirelessAeStyle.ONLINE_TEXT);
+
         if (this.menu.getNetworks().isEmpty()) {
             WirelessAeStyle.drawTrimmedString(
                     graphics,
                     this.font,
-                    Component.translatable("label.gtlcore.wireless_target.no_networks"),
+                    Component.translatable("label.gtlcore.wireless_bookmark.no_networks"),
                     CONTENT_X,
-                    LIST_Y + 6,
+                    LIST_Y + 4,
                     this.imageWidth - CONTENT_X * 2,
                     WirelessAeStyle.WARNING_TEXT);
         }
     }
 
-    private WirelessAeTargetMenu.Entry getConnectedEntry() {
-        return this.connectedEntry;
-    }
-
-    private WirelessAeTargetMenu.Entry getDisconnectableEntry() {
-        return this.disconnectableEntry;
-    }
-
-    private WirelessAeTargetMenu.Entry findConnectedEntry() {
-        for (WirelessAeTargetMenu.Entry entry : this.menu.getNetworks()) {
-            if (entry.connected()) {
-                return entry;
+    private String findFavoriteName(UUID favoriteNetwork) {
+        if (favoriteNetwork == null) {
+            return null;
+        }
+        for (WirelessNetworkBookmarkMenu.Entry entry : this.menu.getNetworks()) {
+            if (entry.frequency().equals(favoriteNetwork)) {
+                return entry.name();
             }
         }
         return null;
-    }
-
-    private WirelessAeTargetMenu.Entry findDisconnectableEntry() {
-        for (WirelessAeTargetMenu.Entry entry : this.menu.getNetworks()) {
-            if (entry.disconnectable()) {
-                return entry;
-            }
-        }
-        return null;
-    }
-
-    private boolean isLockedByCableConnection() {
-        return this.lockedByCableConnection;
     }
 
     private void drawNetworkRows(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -132,23 +108,22 @@ public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTa
         int listX = getListX();
         int listY = getListY();
         int listWidth = getListWidth(hasScrollbar);
-        boolean lockedByCableConnection = isLockedByCableConnection();
 
         int rows = Math.min(visibleRows, Math.max(0, totalRows - this.scrollOffset));
         for (int i = 0; i < rows; i++) {
-            WirelessAeTargetMenu.Entry entry = this.menu.getNetworks().get(this.scrollOffset + i);
+            WirelessNetworkBookmarkMenu.Entry entry = this.menu.getNetworks().get(this.scrollOffset + i);
             int rowY = listY + i * ROW_HEIGHT;
-            boolean hovered = !lockedByCableConnection && !entry.connected() &&
-                    isInsideRect(mouseX, mouseY, listX, rowY, listWidth, BUTTON_HEIGHT);
+            boolean selected = entry.frequency().equals(this.favoriteNetwork);
+            boolean hovered = isInsideRect(mouseX, mouseY, listX, rowY, listWidth, BUTTON_HEIGHT);
             WirelessAeStyle.drawButtonBackground(graphics, listX, rowY, listWidth, BUTTON_HEIGHT,
-                    true, entry.connected(), false, hovered);
+                    true, selected, false, hovered);
             WirelessAeStyle.drawTrimmedString(
                     graphics,
                     this.font,
                     Component.literal(entry.name()),
                     listX + 10,
                     rowY + 5,
-                    Math.max(8, listWidth - 20 - (entry.connected() ? 24 : 0)),
+                    Math.max(8, listWidth - 20 - (selected ? 24 : 0)),
                     WirelessAeStyle.TEXT);
         }
 
@@ -161,23 +136,6 @@ public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTa
                     totalRows,
                     visibleRows,
                     this.scrollOffset);
-        }
-
-        WirelessAeTargetMenu.Entry disconnectableEntry = getDisconnectableEntry();
-        if (disconnectableEntry != null) {
-            int disconnectY = getDisconnectY();
-            WirelessAeStyle.drawSeparator(graphics, this.leftPos + 16, disconnectY - 5, this.imageWidth - 32);
-            boolean hovered = isInsideRect(mouseX, mouseY, listX, disconnectY, getFullContentWidth(), BUTTON_HEIGHT);
-            WirelessAeStyle.drawButtonBackground(graphics, listX, disconnectY, getFullContentWidth(), BUTTON_HEIGHT,
-                    true, false, true, hovered);
-            WirelessAeStyle.drawTrimmedString(
-                    graphics,
-                    this.font,
-                    Component.translatable("button.gtlcore.wireless_target.disconnect"),
-                    listX + 8,
-                    disconnectY + 5,
-                    getFullContentWidth() - 16,
-                    WirelessAeStyle.WARNING_TEXT);
         }
     }
 
@@ -233,50 +191,22 @@ public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTa
         int listY = getListY();
         int visibleRows = getVisibleRows();
         boolean hasScrollbar = WirelessAeStyle.needsScrollbar(this.menu.getNetworks().size(), visibleRows);
-        int listWidth = getListWidth(hasScrollbar);
-        if (isInsideRect(mouseX, mouseY, listX, listY, listWidth, visibleRows * ROW_HEIGHT)) {
-            double relativeY = mouseY - listY;
-            if ((int) relativeY % ROW_HEIGHT >= BUTTON_HEIGHT) {
-                return true;
-            }
-            int index = this.scrollOffset + (int) (relativeY / ROW_HEIGHT);
-            if (index >= 0 && index < this.menu.getNetworks().size() && !isLockedByCableConnection()) {
-                connectEntry(this.menu.getNetworks().get(index));
-            }
+        if (!isInsideRect(mouseX, mouseY, listX, listY, getListWidth(hasScrollbar), visibleRows * ROW_HEIGHT)) {
+            return false;
+        }
+
+        double relativeY = mouseY - listY;
+        if ((int) relativeY % ROW_HEIGHT >= BUTTON_HEIGHT) {
             return true;
         }
-
-        WirelessAeTargetMenu.Entry disconnectableEntry = getDisconnectableEntry();
-        if (disconnectableEntry != null && isInsideRect(mouseX, mouseY, listX, getDisconnectY(), getFullContentWidth(), BUTTON_HEIGHT)) {
-            disconnectEntry(disconnectableEntry);
-            return true;
+        int index = this.scrollOffset + (int) (relativeY / ROW_HEIGHT);
+        if (index >= 0 && index < this.menu.getNetworks().size()) {
+            WirelessNetworkBookmarkMenu.Entry entry = this.menu.getNetworks().get(index);
+            WirelessAePackets.CHANNEL.sendToServer(
+                    new WirelessAePackets.SetFavoriteNetworkPacket(this.menu.getPos(), entry.frequency()));
+            this.onClose();
         }
-        return false;
-    }
-
-    private void connectEntry(WirelessAeTargetMenu.Entry entry) {
-        if (entry.connected()) {
-            return;
-        }
-        WirelessAePackets.CHANNEL.sendToServer(
-                new WirelessAePackets.ConnectTargetPacket(
-                        this.menu.getTargetPos(),
-                        this.menu.getTargetSide(),
-                        null,
-                        entry.frequency(),
-                        false));
-        this.onClose();
-    }
-
-    private void disconnectEntry(WirelessAeTargetMenu.Entry entry) {
-        WirelessAePackets.CHANNEL.sendToServer(
-                new WirelessAePackets.ConnectTargetPacket(
-                        this.menu.getTargetPos(),
-                        this.menu.getTargetSide(),
-                        null,
-                        entry.frequency(),
-                        true));
-        this.onClose();
+        return true;
     }
 
     private boolean scrollBy(double delta) {
@@ -317,12 +247,8 @@ public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTa
         return this.topPos + LIST_Y;
     }
 
-    private int getFullContentWidth() {
-        return this.imageWidth - CONTENT_X * 2;
-    }
-
     private int getListWidth(boolean hasScrollbar) {
-        return getFullContentWidth() - (hasScrollbar ? SCROLLBAR_WIDTH + SCROLLBAR_GAP : 0);
+        return this.imageWidth - CONTENT_X * 2 - (hasScrollbar ? SCROLLBAR_WIDTH + SCROLLBAR_GAP : 0);
     }
 
     private int getScrollbarX() {
@@ -334,15 +260,7 @@ public class WirelessAeTargetScreen extends AbstractContainerScreen<WirelessAeTa
     }
 
     private int getVisibleRows() {
-        return Math.max(1, (getListBottomY() - getListY()) / ROW_HEIGHT);
-    }
-
-    private int getListBottomY() {
-        return getDisconnectableEntry() == null ? this.topPos + this.imageHeight - 16 : getDisconnectY() - DISCONNECT_GAP;
-    }
-
-    private int getDisconnectY() {
-        return this.topPos + this.imageHeight - 30;
+        return Math.max(1, (this.topPos + this.imageHeight - 16 - getListY()) / ROW_HEIGHT);
     }
 
     private static boolean isInsideRect(double mouseX, double mouseY, int x, int y, int width, int height) {
