@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
-- **Last Active**: 2026-06-04
+- **Total Sessions**: 14
+- **Last Active**: 2026-06-18
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~467 | Active |
+| `journal-1.md` | ~501 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-06-18 | AE忽略副产物等待收尾 | `5d7aa3af`, `8fbf073` | `gtl-1431-skyblock` |
 | 13 | 2026-06-04 | Sync upstream and build validation jar | `dda1cba4` | `gtl-1431-skyblock` |
 | 12 | 2026-06-04 | Fix catalyst capability blocking | `6826c175` | `gtl-1431-skyblock` |
 | 11 | 2026-06-04 | Fix huge input bus circuit handling | `79376ce3`, `a1f19d78`, `b0119937` | `gtl-1431-skyblock` |

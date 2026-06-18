@@ -173,7 +173,9 @@ Switched local work to the gtl-1431-skyblock upstream baseline, migrated Trellis
 
 ### Main Changes
 
-(Add details)
+- Archived the completed `ae-ignore-byproduct-wait` Trellis task after confirming its PRD acceptance items were satisfied.
+- Built and committed the GTLAdditions `subspace` compatibility fix against GTLCore `1.2.3.0-fix7`.
+- Confirmed the GTLAdditions SubSpace jar metadata and helper bytecode no longer reference the removed `keepByProduct` API.
 
 ### Git Commits
 
@@ -183,7 +185,8 @@ Switched local work to the gtl-1431-skyblock upstream baseline, migrated Trellis
 
 ### Testing
 
-- [OK] (Add test results)
+- [OK] GTLAdditions `subspace` `build` passed with `spotlessCheck`, `compileKotlin`, `compileJava`, and `remapJar`.
+- [OK] GTLCore task archive commit completed with only the task directory move staged.
 
 ### Status
 
@@ -453,6 +456,40 @@ Merged upstream gtl-1431-skyblock into local main, refreshed origin, and built g
 | Hash | Message |
 |------|---------|
 | `dda1cba4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 14: AE忽略副产物等待收尾
+
+**Date**: 2026-06-18
+**Task**: AE忽略副产物等待收尾
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+完成 ME 样板总成只追踪主产物任务归档，并完成 GTLAdditions subspace 对 GTLCore fix7 样板 API 的兼容修复与本地提交。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5d7aa3af` | (see git log) |
+| `8fbf073` | (see git log) |
 
 ### Testing
 
