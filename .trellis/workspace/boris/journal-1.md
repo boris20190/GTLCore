@@ -502,3 +502,36 @@ Merged upstream gtl-1431-skyblock into local main, refreshed origin, and built g
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: 归档通配符样板属性过滤保存修复
+
+**Date**: 2026-07-11
+**Task**: 归档通配符样板属性过滤保存修复
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+修复 wildcard_pattern 过滤器与 IN/OUT 配置页的保存顺序，保留可选依赖兼容；Spotless、Java 编译、JSON 与任务校验通过，用户确认最终 JAR 已在服务器稳定生效，任务已归档。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8249ee1d` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
