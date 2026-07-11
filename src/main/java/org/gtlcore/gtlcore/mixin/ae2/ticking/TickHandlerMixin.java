@@ -9,12 +9,15 @@ import net.minecraft.world.level.LevelAccessor;
 import appeng.crafting.CraftingCalculation;
 import appeng.hooks.ticking.TickHandler;
 import appeng.me.Grid;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import com.google.common.collect.Multimap;
+import org.spongepowered.asm.mixin.*;
 
 @Mixin(TickHandler.class)
 public abstract class TickHandlerMixin {
+
+    @Shadow(remap = false)
+    @Final
+    private Multimap<LevelAccessor, CraftingCalculation> craftingJobs;
 
     @Shadow(remap = false)
     public Iterable<Grid> getGridList() {
@@ -28,10 +31,11 @@ public abstract class TickHandlerMixin {
 
     /**
      * @author Dragons
-     * @reason 删去simulateCraftingJobs调用
+     * @reason 使用GTLCore旧后台切片预算推进下单计算
      */
     @Overwrite(remap = false)
     private void onServerLevelTickEnd(ServerLevel level) {
+        this.simulateCraftingJobs(level);
         this.readyBlockEntities(level);
 
         // tick networks
@@ -49,19 +53,36 @@ public abstract class TickHandlerMixin {
 
     /**
      * @author Dragons
-     * @reason 禁用
+     * @reason 使用GTLCore旧后台切片预算注册下单计算
      */
     @Overwrite(remap = false)
     public void registerCraftingSimulation(Level level, CraftingCalculation craftingCalculation) {
-        throw new AssertionError();
+        if (level.isClientSide) {
+            throw new IllegalArgumentException("Trying to register a crafting job for a client-level");
+        }
+        synchronized (this.craftingJobs) {
+            this.craftingJobs.put(level, craftingCalculation);
+        }
     }
 
     /**
      * @author Dragons
-     * @reason 禁用
+     * @reason 使用GTLCore旧后台切片预算推进下单计算
      */
     @Overwrite(remap = false)
     private void simulateCraftingJobs(LevelAccessor level) {
-        throw new AssertionError();
+        synchronized (this.craftingJobs) {
+            var jobs = this.craftingJobs.get(level);
+            if (jobs.isEmpty()) {
+                return;
+            }
+
+            for (var iterator = jobs.iterator(); iterator.hasNext();) {
+                var job = iterator.next();
+                if (!job.simulateFor(Integer.MAX_VALUE)) {
+                    iterator.remove();
+                }
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-package org.gtlcore.gtlcore.mixin.wildcard;
+package org.gtlcore.gtlcore.integration.wildcard;
 
 import net.minecraftforge.fml.loading.LoadingModList;
 

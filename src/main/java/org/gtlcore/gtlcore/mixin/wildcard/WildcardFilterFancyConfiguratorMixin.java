@@ -1,5 +1,7 @@
 package org.gtlcore.gtlcore.mixin.wildcard;
 
+import org.gtlcore.gtlcore.integration.wildcard.WildcardConfiguratorSaveHelper;
+
 import net.minecraft.world.item.ItemStack;
 
 import org.leodreamer.wildcard_pattern.wildcard.WildcardPatternLogic;

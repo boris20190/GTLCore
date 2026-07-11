@@ -15,4 +15,8 @@ public interface ICraftingTreeNode {
 
     void legacyRequest(CraftingSimulationState inv, long requestedAmount,
                        @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException;
+
+    void gtlcore$resetFastState();
+
+    Object gtlcore$getRequestMergeKey();
 }

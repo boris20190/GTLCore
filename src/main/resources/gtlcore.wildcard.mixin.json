@@ -2,7 +2,7 @@
   "required": false,
   "minVersion": "0.8",
   "package": "org.gtlcore.gtlcore.mixin.wildcard",
-  "plugin": "org.gtlcore.gtlcore.mixin.wildcard.WildcardMixinPlugin",
+  "plugin": "org.gtlcore.gtlcore.integration.wildcard.WildcardMixinPlugin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "WildcardFilterFancyConfiguratorMixin",

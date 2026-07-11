@@ -1,8 +1,10 @@
 package org.gtlcore.gtlcore.mixin.ae2.crafting;
 
+import org.gtlcore.gtlcore.integration.ae2.crafting.AE2CraftingRequestMergeKey;
 import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingCalculation;
 import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingTreeNode;
 import org.gtlcore.gtlcore.integration.ae2.crafting.ICraftingTreeProcess;
+import org.gtlcore.gtlcore.utils.NumberUtils;
 
 import net.minecraft.world.level.Level;
 
@@ -34,6 +36,12 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
 
     @Unique
     private IPatternDetails patternDetails;
+    @Unique
+    private InputTemplate gTLCore$directTemplate;
+    @Unique
+    private InputTemplate gTLCore$processingTemplate;
+    @Unique
+    private Object gTLCore$requestMergeKey;
 
     @Shadow(remap = false)
     @Final
@@ -91,13 +99,17 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
      */
     @Overwrite(remap = false)
     private Iterable<InputTemplate> getValidItemTemplates(ICraftingInventory inv) {
-        if (this.parentInput == null)
-            return List.of(new InputTemplate(what, 1));
-        else if (this.patternDetails instanceof AEProcessingPattern) {
-            GenericStack stack = this.parentInput.getPossibleInputs()[0];
-            return List.of(new InputTemplate(stack.what(), stack.amount()));
+        if (this.parentInput == null) {
+            return List.of(gTLCore$getDirectTemplate());
+        } else if (this.patternDetails instanceof AEProcessingPattern) {
+            return List.of(gTLCore$getProcessingTemplate());
         }
-        return CraftingCpuHelper.getValidItemTemplates(inv, this.parentInput, level);
+        return ((ICraftingCalculation) this.job).gtlcore$getCachedTemplates(
+                inv,
+                this.parentInput,
+                this.level,
+                this.what,
+                () -> CraftingCpuHelper.getValidItemTemplates(inv, this.parentInput, level));
     }
 
     @Override
@@ -111,32 +123,25 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
     @Unique
     public void fastRequest(CraftingSimulationState inv, long requestedAmount,
                             @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException {
-        ((ICraftingCalculation) this.job).handlePausing();
+        ICraftingCalculation calculation = (ICraftingCalculation) this.job;
+        calculation.gtlcore$handlePausing();
 
         inv.addStackBytes(what, amount, requestedAmount);
 
-        for (var template : getValidItemTemplates(inv)) {
-            long extracted = CraftingCpuHelper.extractTemplates(inv, template, requestedAmount);
-
-            if (extracted > 0) {
-                requestedAmount -= extracted;
-                addContainerItems(template.key(), extracted, containerItems);
-
-                if (requestedAmount == 0) {
-                    return;
-                }
-            }
+        requestedAmount = gTLCore$extractAvailableTemplates(inv, requestedAmount, containerItems, calculation);
+        if (requestedAmount == 0) {
+            return;
         }
 
         addContainerItems(what, requestedAmount, containerItems);
 
         if (this.canEmit) {
-            inv.emitItems(this.what, this.amount * requestedAmount);
+            inv.emitItems(this.what, NumberUtils.saturatedMultiply(this.amount, requestedAmount));
             return;
         }
 
         buildChildPatterns();
-        long totalRequestedItems = requestedAmount * this.amount;
+        long totalRequestedItems = NumberUtils.saturatedMultiply(requestedAmount, this.amount);
         if (this.nodes.size() == 1) {
             final ICraftingTreeProcess pro = (ICraftingTreeProcess) (this.nodes.get(0));
             var craftedPerPattern = pro.getOutputCountTest(this.what);
@@ -146,7 +151,7 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
                 if (pro.limitsQuantityTest()) {
                     times = 1;
                 } else {
-                    times = (totalRequestedItems + craftedPerPattern - 1) / craftedPerPattern;
+                    times = gTLCore$ceilDiv(totalRequestedItems, craftedPerPattern);
                 }
                 pro.fastRequest(inv, times);
 
@@ -196,7 +201,7 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
 
                     try {
                         var craftedPerPattern = pro.getOutputCountTest(this.what);
-                        long times = pro.limitsQuantityTest() ? 1 : (targetAmount + craftedPerPattern - 1) / craftedPerPattern;
+                        long times = pro.limitsQuantityTest() ? 1 : gTLCore$ceilDiv(targetAmount, craftedPerPattern);
 
                         if (times > 0) {
                             final ChildCraftingSimulationState child = new ChildCraftingSimulationState(inv);
@@ -240,32 +245,25 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
     @Unique
     public void ultraFastRequest(CraftingSimulationState inv, long requestedAmount,
                                  @Nullable KeyCounter containerItems) throws CraftBranchFailure, InterruptedException {
-        ((ICraftingCalculation) this.job).handlePausing();
+        ICraftingCalculation calculation = (ICraftingCalculation) this.job;
+        calculation.gtlcore$handlePausing();
 
         inv.addStackBytes(what, amount, requestedAmount);
 
-        for (var template : getValidItemTemplates(inv)) {
-            long extracted = CraftingCpuHelper.extractTemplates(inv, template, requestedAmount);
-
-            if (extracted > 0) {
-                requestedAmount -= extracted;
-                addContainerItems(template.key(), extracted, containerItems);
-
-                if (requestedAmount == 0) {
-                    return;
-                }
-            }
+        requestedAmount = gTLCore$extractAvailableTemplates(inv, requestedAmount, containerItems, calculation);
+        if (requestedAmount == 0) {
+            return;
         }
 
         addContainerItems(what, requestedAmount, containerItems);
 
         if (this.canEmit) {
-            inv.emitItems(this.what, this.amount * requestedAmount);
+            inv.emitItems(this.what, NumberUtils.saturatedMultiply(this.amount, requestedAmount));
             return;
         }
 
         buildChildPatterns();
-        long totalRequestedItems = requestedAmount * this.amount;
+        long totalRequestedItems = NumberUtils.saturatedMultiply(requestedAmount, this.amount);
         if (this.nodes.size() == 1) {
             final ICraftingTreeProcess pro = (ICraftingTreeProcess) (this.nodes.get(0));
             var craftedPerPattern = pro.getOutputCountTest(this.what);
@@ -275,7 +273,7 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
                 if (pro.limitsQuantityTest()) {
                     times = 1;
                 } else {
-                    times = (totalRequestedItems + craftedPerPattern - 1) / craftedPerPattern;
+                    times = gTLCore$ceilDiv(totalRequestedItems, craftedPerPattern);
                 }
                 pro.ultraFastRequest(inv, times);
 
@@ -312,7 +310,7 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
 
                 try {
                     var craftedPerPattern = pro.getOutputCountTest(this.what);
-                    long times = pro.limitsQuantityTest() ? 1 : (totalRequestedItems + craftedPerPattern - 1) / craftedPerPattern;
+                    long times = pro.limitsQuantityTest() ? 1 : gTLCore$ceilDiv(totalRequestedItems, craftedPerPattern);
 
                     if (times > 0) {
                         final ChildCraftingSimulationState child = new ChildCraftingSimulationState(inv);
@@ -341,5 +339,107 @@ public abstract class CraftingTreeNodeMixin implements ICraftingTreeNode {
         } else {
             throw new CraftBranchFailure(this.what, totalRequestedItems);
         }
+    }
+
+    @Override
+    @Unique
+    public void gtlcore$resetFastState() {
+        if (this.nodes == null) {
+            return;
+        }
+        for (CraftingTreeProcess node : this.nodes) {
+            ((ICraftingTreeProcess) node).gtlcore$resetFastState();
+        }
+    }
+
+    @Override
+    @Unique
+    public Object gtlcore$getRequestMergeKey() {
+        if (this.gTLCore$requestMergeKey == null) {
+            this.gTLCore$requestMergeKey = new AE2CraftingRequestMergeKey(this.what, this.amount, this.parentInput);
+        }
+        return this.gTLCore$requestMergeKey;
+    }
+
+    @Unique
+    private static long gTLCore$ceilDiv(long value, long divisor) {
+        if (value <= 0) {
+            return 0;
+        }
+        if (divisor <= 1) {
+            return value;
+        }
+        return 1 + (value - 1) / divisor;
+    }
+
+    @Unique
+    private long gTLCore$extractAvailableTemplates(CraftingSimulationState inv, long requestedAmount,
+                                                   @Nullable KeyCounter containerItems,
+                                                   ICraftingCalculation calculation) {
+        InputTemplate singleTemplate = gTLCore$getSingleTemplate();
+        if (singleTemplate != null) {
+            return gTLCore$extractTemplate(inv, requestedAmount, containerItems, calculation, singleTemplate);
+        }
+
+        for (var template : getValidItemTemplates(inv)) {
+            requestedAmount = gTLCore$extractTemplate(inv, requestedAmount, containerItems, calculation, template);
+            if (requestedAmount == 0) {
+                break;
+            }
+        }
+        return requestedAmount;
+    }
+
+    @Unique
+    private long gTLCore$extractTemplate(CraftingSimulationState inv, long requestedAmount,
+                                         @Nullable KeyCounter containerItems,
+                                         ICraftingCalculation calculation, InputTemplate template) {
+        long extracted = gTLCore$extractTemplates(inv, template, requestedAmount);
+
+        if (extracted > 0) {
+            requestedAmount -= extracted;
+            addContainerItems(template.key(), extracted, containerItems);
+            calculation.gtlcore$clearTemplateCache();
+        }
+        return requestedAmount;
+    }
+
+    @Unique
+    private static long gTLCore$extractTemplates(ICraftingInventory inv, InputTemplate template, long requestedAmount) {
+        if (requestedAmount <= 0) {
+            return 0;
+        }
+        if (template.amount() == 1) {
+            return inv.extract(template.key(), requestedAmount, Actionable.MODULATE);
+        }
+        return CraftingCpuHelper.extractTemplates(inv, template, requestedAmount);
+    }
+
+    @Unique
+    private @Nullable InputTemplate gTLCore$getSingleTemplate() {
+        if (this.parentInput == null) {
+            return gTLCore$getDirectTemplate();
+        }
+        if (this.patternDetails instanceof AEProcessingPattern) {
+            return gTLCore$getProcessingTemplate();
+        }
+        return null;
+    }
+
+    @Unique
+    private InputTemplate gTLCore$getDirectTemplate() {
+        if (this.gTLCore$directTemplate == null) {
+            this.gTLCore$directTemplate = new InputTemplate(this.what, 1);
+        }
+        return this.gTLCore$directTemplate;
+    }
+
+    @Unique
+    private InputTemplate gTLCore$getProcessingTemplate() {
+        if (this.gTLCore$processingTemplate == null) {
+            GenericStack stack = this.parentInput.getPossibleInputs()[0];
+            this.gTLCore$processingTemplate = new InputTemplate(stack.what(), stack.amount());
+        }
+        return this.gTLCore$processingTemplate;
     }
 }

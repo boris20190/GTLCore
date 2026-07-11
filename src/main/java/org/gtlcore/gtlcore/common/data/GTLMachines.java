@@ -597,6 +597,20 @@ public class GTLMachines {
             .compassNode("item_bus")
             .register();
 
+    public static final MachineDefinition TAG_FILTER_ME_STOCK_HATCH_PART_MACHINE = REGISTRATE
+            .machine("tag_filter_me_stock_hatch_part_machine", TagFilterMEStockHatchPartMachine::new)
+            .tier(LuV)
+            .abilities(PartAbility.IMPORT_FLUIDS)
+            .rotationState(RotationState.ALL)
+            .renderer(() -> new OverlayTieredMachineRenderer(LuV, GTCEu.id("block/machine/part/me_fluid_hatch.import")))
+            .tooltips(
+                    Component.translatable("gtceu.machine.fluid_hatch.import.tooltip"),
+                    Component.translatable("gtceu.machine.me.fluid_import.tooltip"),
+                    Component.translatable("gtceu.machine.me.copy_paste.tooltip"),
+                    Component.translatable("gtceu.universal.enabled"))
+            .compassNode("fluid_hatch")
+            .register();
+
     public static final MachineDefinition ME_DUAL_HATCH_STOCK_PART_MACHINE = REGISTRATE
             .machine("me_dual_hatch_stock_part_machine", MEDualHatchStockPartMachine::new)
             .tier(LuV)
@@ -716,6 +730,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("gtceu.machine.me_mini_pattern_buffer.desc.0"),
+                        Component.translatable("gtlcore.machine.pattern_quick_upload.tooltip"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
@@ -736,6 +751,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.5"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
+                        Component.translatable("gtlcore.machine.pattern_quick_upload.tooltip"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
@@ -758,6 +774,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
                         Component.translatable("gtlcore.machine.me_stocking_pattern_buffer.desc.0"),
                         Component.translatable("gtlcore.machine.me_stocking_pattern_buffer.desc.1"),
+                        Component.translatable("gtlcore.machine.pattern_quick_upload.tooltip"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
@@ -779,6 +796,7 @@ public class GTLMachines {
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.4"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.5"),
                         Component.translatable("gtceu.machine.me_pattern_buffer.desc.6"),
+                        Component.translatable("gtlcore.machine.pattern_quick_upload.tooltip"),
                         Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                         Component.translatable("gtceu.universal.enabled"))
                 .tooltipBuilder(GTL_ADD)
@@ -865,6 +883,8 @@ public class GTLMachines {
                 .langValue("ME Molecular Assembler IO")
                 .tooltips(Component.translatable("gtceu.universal.disabled"),
                         Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.0"),
+                        Component.translatable("gtceu.machine.me_pattern_buffer.desc.3"),
+                        Component.translatable("gtlcore.machine.pattern_quick_upload.tooltip"),
                         Component.translatable("gtceu.machine.me_molecular_assembler_io.tooltip.1"))
                 .tooltipBuilder(GTL_ADD)
                 .register();

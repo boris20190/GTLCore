@@ -20,4 +20,6 @@ public interface ICraftingTreeProcess {
     long getOutputCountTest(AEKey what);
 
     boolean limitsQuantityTest();
+
+    void gtlcore$resetFastState();
 }

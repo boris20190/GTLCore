@@ -8,7 +8,12 @@ import appeng.hooks.ticking.TickHandler;
 import appeng.me.helpers.InterestManager;
 import appeng.me.helpers.StackWatcher;
 import appeng.me.service.StorageService;
-import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.Overwrite;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 
 /**
  * 代码参考自gto

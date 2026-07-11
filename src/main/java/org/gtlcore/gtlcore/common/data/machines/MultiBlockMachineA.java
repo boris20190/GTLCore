@@ -865,12 +865,14 @@ public class MultiBlockMachineA {
             })
             .recipeType(GCyMRecipeTypes.ALLOY_BLAST_RECIPES)
             .recipeType(GTRecipeTypes.ALLOY_SMELTER_RECIPES)
+            .tooltips(Component.translatable("gtceu.machine.mega_alloy_blast_smelter.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.eut_multiplier.tooltip", 0.8))
             .tooltips(Component.translatable("gtceu.machine.duration_multiplier.tooltip", 0.6))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.a"))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.0"))
             .tooltips(Component.translatable("gtceu.machine.perfect_oc"))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.2"))
+            .tooltips(Component.translatable("gtceu.machine.mega_alloy_blast_smelter.tooltip.1"))
             .tooltips(Component.translatable("gtceu.multiblock.parallelizable.tooltip"))
             .tooltips(Component.translatable("tooltip.gtlcore.structure.source", "GT++"))
             .tooltips(Component.translatable("gtceu.machine.available_recipe_map_2.tooltip",
@@ -1023,6 +1025,7 @@ public class MultiBlockMachineA {
             .recipeType(GTRecipeTypes.BLAST_RECIPES)
             .recipeType(GTRecipeTypes.ALLOY_SMELTER_RECIPES)
             .recipeType(GCyMRecipeTypes.ALLOY_BLAST_RECIPES)
+            .tooltips(Component.translatable("gtceu.machine.super_alloy_blast_smelter.tooltip"))
             .tooltips(Component.translatable("gtceu.machine.duration_multiplier.tooltip", 0.2))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.a"))
             .tooltips(Component.translatable("gtceu.machine.electric_blast_furnace.tooltip.0"))
@@ -3094,7 +3097,8 @@ public class MultiBlockMachineA {
             .tooltipBuilder(GTLMachines.GTL_ADD)
             .rotationState(RotationState.ALL)
             .recipeType(GTLRecipeTypes.ELECTRIC_IMPLOSION_COMPRESSOR_RECIPES)
-            .recipeModifiers(GTRecipeModifiers.PARALLEL_HATCH,
+            .recipeModifiers(GTLRecipeModifiers.GCYM_REDUCTION,
+                    GTRecipeModifiers.PARALLEL_HATCH,
                     GTRecipeModifiers.ELECTRIC_OVERCLOCK.apply(OverclockingLogic.NON_PERFECT_OVERCLOCK_SUBTICK))
             .appearanceBlock(GTBlocks.CASING_TUNGSTENSTEEL_ROBUST)
             .pattern(definition -> FactoryBlockPattern.start()
