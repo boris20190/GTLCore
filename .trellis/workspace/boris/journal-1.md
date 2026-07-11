@@ -535,3 +535,37 @@ Merged upstream gtl-1431-skyblock into local main, refreshed origin, and built g
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: 整合上游 4315cf7c
+
+**Date**: 2026-07-11
+**Task**: 整合上游 4315cf7c
+**Branch**: `gtl-1431-skyblock`
+
+### Summary
+
+将维护分支整合至上游 4315cf7c，保留本地通配符样板保存与 ME 主产物语义，解决四处冲突并去重两条 tooltip；项目内 clean 构建 JAR 通过完整质量门和服务器验收，同步 Mixin package 与测试验证规范后归档任务。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `10835f0b` | (see git log) |
+| `e3cde996` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
