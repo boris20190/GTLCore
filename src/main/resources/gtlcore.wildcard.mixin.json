@@ -1,0 +1,15 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "org.gtlcore.gtlcore.mixin.wildcard",
+  "plugin": "org.gtlcore.gtlcore.mixin.wildcard.WildcardMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "WildcardFilterFancyConfiguratorMixin",
+    "WildcardIOFancyConfiguratorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1,
+    "maxShiftBy": 5
+  }
+}

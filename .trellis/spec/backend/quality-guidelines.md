@@ -67,6 +67,7 @@ Mixin 必须满足：
 - `@Unique` 字段和方法使用 `gTLCore$` 前缀。
 - 新增 mixin 同步加入 `gtlcore.mixin.json`。
 - 客户端目标放 `client` 数组，不放通用 `mixins`。
+- 修补第三方 GUI/configurator 的保存逻辑时，先确认组件是否通过 `onSave()`、callback 或 widget getter 延迟同步 UI 当前值；序列化 NBT 或调用外层保存回调必须发生在状态同步之后。
 
 ### Server/client side
 

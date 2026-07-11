@@ -21,7 +21,8 @@ loom {
     silentMojangMappingsLicense()
     forge {
         mixinConfigs = [
-                "gtlcore.mixin.json"
+                "gtlcore.mixin.json",
+                "gtlcore.wildcard.mixin.json"
         ]
 
         dataGen {
